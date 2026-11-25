@@ -324,6 +324,23 @@ window.AnshWorld = (() => {
     }
   }
 
+  /* Register interactive benches from N tiles */
+  PROPS.benches.forEach((b, idx) => {
+    INTERACTABLES.push({
+      id: `bench_${idx}`,
+      kind: 'bench',
+      label: 'PLAZA BENCH',
+      zone: 'Central Plaza · Rain Overlook',
+      prompt: 'Sit & Watch Rain',
+      accent: 'amber',
+      tx: b.c,
+      ty: b.r,
+      benchX: b.c * T + 16,
+      benchY: b.r * T + 16,
+      hitBox: { x1: b.c * T, y1: b.r * T, x2: (b.c + 1) * T, y2: (b.r + 1) * T }
+    });
+  });
+
   /* Register interactive vending machines from V tiles */
   PROPS.vendors.forEach((v, idx) => {
     const isWest = v.c < 20;

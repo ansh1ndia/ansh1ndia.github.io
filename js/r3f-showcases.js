@@ -124,48 +124,50 @@ function GlyphLensExhibit({ reducedMotion }) {
 
   const res = useMemo(() => {
     const paneGeo = new THREE.PlaneGeometry(2.1, 1.45);
-    const barHGeo = new THREE.BoxGeometry(0.45, 0.06, 0.08);
-    const barVGeo = new THREE.BoxGeometry(0.06, 0.45, 0.08);
-    const laserGeo = new THREE.BoxGeometry(2.0, 0.045, 0.1);
-    const prismGeo = new THREE.OctahedronGeometry(0.52, 0);
-    const cubeGeo = new THREE.BoxGeometry(0.18, 0.18, 0.18);
+    const barHGeo = new THREE.BoxGeometry(0.42, 0.022, 0.03);
+    const barVGeo = new THREE.BoxGeometry(0.022, 0.42, 0.03);
+    const laserGeo = new THREE.BoxGeometry(2.02, 0.018, 0.04);
+    const prismGeo = new THREE.OctahedronGeometry(0.5, 0);
+    const prismWireGeo = new THREE.OctahedronGeometry(0.62, 0);
+    const cubeGeo = new THREE.BoxGeometry(0.15, 0.15, 0.15);
 
-    const paneMat = new THREE.MeshStandardMaterial({
+    const paneMat = new THREE.MeshLambertMaterial({
       color: '#ef4444',
       transparent: true,
       opacity: 0.1,
-      roughness: 0.15,
-      metalness: 0.6,
       side: THREE.DoubleSide
     });
-    const cornerMat = new THREE.MeshStandardMaterial({
+    const cornerMat = new THREE.MeshLambertMaterial({
       color: '#f87171',
       emissive: '#ef4444',
-      emissiveIntensity: 1.25,
-      roughness: 0.25
+      emissiveIntensity: 1.25
     });
-    const laserMat = new THREE.MeshStandardMaterial({
+    const laserMat = new THREE.MeshLambertMaterial({
       color: '#fecaca',
       emissive: '#ef4444',
-      emissiveIntensity: 2.4,
-      roughness: 0.1
+      emissiveIntensity: 2.2
     });
-    const prismMat = new THREE.MeshStandardMaterial({
+    const prismMat = new THREE.MeshLambertMaterial({
       color: '#e2e8f0',
       emissive: '#ef4444',
-      emissiveIntensity: 0.55,
-      roughness: 0.12,
-      metalness: 0.85
+      emissiveIntensity: 0.55
     });
-    const glyphMat = new THREE.MeshStandardMaterial({
+    const prismWireMat = new THREE.MeshLambertMaterial({
+      color: '#fca5a5',
+      emissive: '#ef4444',
+      emissiveIntensity: 0.85,
+      wireframe: true
+    });
+    const glyphMat = new THREE.MeshLambertMaterial({
       color: '#fca5a5',
       emissive: '#dc2626',
-      emissiveIntensity: 0.95,
-      roughness: 0.25,
-      metalness: 0.5
+      emissiveIntensity: 0.95
     });
 
-    return { paneGeo, barHGeo, barVGeo, laserGeo, prismGeo, cubeGeo, paneMat, cornerMat, laserMat, prismMat, glyphMat };
+    return {
+      paneGeo, barHGeo, barVGeo, laserGeo, prismGeo, prismWireGeo, cubeGeo,
+      paneMat, cornerMat, laserMat, prismMat, prismWireMat, glyphMat
+    };
   }, []);
 
   useEffect(() => {
@@ -215,7 +217,10 @@ function GlyphLensExhibit({ reducedMotion }) {
         </group>
       `)}
       <mesh ref=${laserRef} geometry=${res.laserGeo} material=${res.laserMat} position=${[0, 0, 0.06]} />
-      <mesh ref=${prismRef} geometry=${res.prismGeo} material=${res.prismMat} />
+      <group ref=${prismRef}>
+        <mesh geometry=${res.prismGeo} material=${res.prismMat} />
+        <mesh geometry=${res.prismWireGeo} material=${res.prismWireMat} />
+      </group>
       ${glyphOffsets.map((_, idx) => html`
         <mesh
           key=${idx}
@@ -235,34 +240,24 @@ function ArcusExhibit({ arcusDoneCount, reducedMotion }) {
   const plateCount = Math.max(1, Math.min(4, Number(arcusDoneCount || 1)));
 
   const res = useMemo(() => {
-    const shaftGeo = new THREE.CylinderGeometry(0.055, 0.055, 2.75, 16);
-    const sleeveGeo = new THREE.CylinderGeometry(0.085, 0.085, 0.52, 16);
-    const plateGeo = new THREE.CylinderGeometry(0.56, 0.56, 0.1, 24);
-    const plateRimGeo = new THREE.TorusGeometry(0.56, 0.024, 10, 28);
-    const arcRingGeo = new THREE.TorusGeometry(1.48, 0.045, 12, 48, Math.PI * 1.45);
-    const outerHaloGeo = new THREE.TorusGeometry(1.64, 0.018, 8, 56);
+    const shaftGeo = new THREE.CylinderGeometry(0.042, 0.042, 2.75, 16);
+    const sleeveGeo = new THREE.CylinderGeometry(0.078, 0.078, 0.52, 16);
+    const plateGeo = new THREE.CylinderGeometry(0.56, 0.56, 0.085, 24);
+    const plateRimGeo = new THREE.TorusGeometry(0.56, 0.016, 10, 32);
+    const arcRingGeo = new THREE.TorusGeometry(1.48, 0.02, 10, 56, Math.PI * 1.45);
+    const outerHaloGeo = new THREE.TorusGeometry(1.64, 0.014, 8, 56);
 
-    const chromeMat = new THREE.MeshStandardMaterial({
-      color: '#e2e8f0',
-      roughness: 0.16,
-      metalness: 0.92
-    });
-    const bumperMat = new THREE.MeshStandardMaterial({
-      color: '#0f172a',
-      roughness: 0.35,
-      metalness: 0.65
-    });
-    const cyanGlowMat = new THREE.MeshStandardMaterial({
+    const chromeMat = new THREE.MeshLambertMaterial({ color: '#e2e8f0' });
+    const bumperMat = new THREE.MeshLambertMaterial({ color: '#0f172a' });
+    const cyanGlowMat = new THREE.MeshLambertMaterial({
       color: '#38bdf8',
       emissive: '#0284c7',
-      emissiveIntensity: 1.75,
-      roughness: 0.2
+      emissiveIntensity: 1.7
     });
-    const arcMat = new THREE.MeshStandardMaterial({
+    const arcMat = new THREE.MeshLambertMaterial({
       color: '#bae6fd',
       emissive: '#38bdf8',
-      emissiveIntensity: 1.6,
-      roughness: 0.25
+      emissiveIntensity: 1.5
     });
 
     return {
@@ -336,26 +331,22 @@ function AboutExhibit({ reducedMotion }) {
     const innerGeo = new THREE.OctahedronGeometry(0.62, 0);
     const satGeo = new THREE.OctahedronGeometry(0.14, 0);
 
-    const outerMat = new THREE.MeshStandardMaterial({
+    const outerMat = new THREE.MeshLambertMaterial({
       color: '#ef4444',
       emissive: '#dc2626',
       emissiveIntensity: 1.15,
       wireframe: true
     });
-    const innerMat = new THREE.MeshStandardMaterial({
+    const innerMat = new THREE.MeshLambertMaterial({
       color: '#090b12',
       emissive: '#1e1b4b',
-      emissiveIntensity: 0.45,
-      roughness: 0.08,
-      metalness: 0.92
+      emissiveIntensity: 0.45
     });
     const satMats = satColors.map(hex =>
-      new THREE.MeshStandardMaterial({
+      new THREE.MeshLambertMaterial({
         color: hex,
         emissive: hex,
-        emissiveIntensity: 0.95,
-        roughness: 0.25,
-        metalness: 0.8
+        emissiveIntensity: 0.95
       })
     );
 
@@ -420,20 +411,19 @@ function FilmsExhibit({ reducedMotion }) {
   const reelBRef = useRef(null);
 
   const res = useMemo(() => {
-    const bodyGeo = new THREE.BoxGeometry(1.15, 0.58, 0.44);
-    const lensGeo = new THREE.CylinderGeometry(0.13, 0.17, 0.34, 16);
+    const bodyGeo = new THREE.BoxGeometry(1.15, 0.54, 0.42);
+    const hairlineGeo = new THREE.BoxGeometry(1.17, 0.02, 0.44);
+    const lensGeo = new THREE.CylinderGeometry(0.12, 0.16, 0.34, 16);
     const beamGeo = new THREE.ConeGeometry(0.68, 1.8, 20, 1, true);
-    const reelRimGeo = new THREE.TorusGeometry(0.46, 0.048, 12, 28);
-    const reelHubGeo = new THREE.CylinderGeometry(0.14, 0.14, 0.1, 16);
-    const spokeGeo = new THREE.BoxGeometry(0.86, 0.045, 0.045);
+    const reelRimGeo = new THREE.TorusGeometry(0.46, 0.02, 10, 32);
+    const reelHubGeo = new THREE.CylinderGeometry(0.13, 0.13, 0.08, 16);
+    const spokeGeo = new THREE.BoxGeometry(0.88, 0.022, 0.024);
 
-    const chassisMat = new THREE.MeshStandardMaterial({ color: '#141724', roughness: 0.45, metalness: 0.65 });
-    const crimsonMat = new THREE.MeshStandardMaterial({
+    const chassisMat = new THREE.MeshLambertMaterial({ color: '#141724' });
+    const crimsonMat = new THREE.MeshLambertMaterial({
       color: '#ef4444',
       emissive: '#dc2626',
-      emissiveIntensity: 1.45,
-      roughness: 0.25,
-      metalness: 0.5
+      emissiveIntensity: 1.45
     });
     const beamMat = new THREE.MeshBasicMaterial({
       color: '#fca5a5',
@@ -443,7 +433,7 @@ function FilmsExhibit({ reducedMotion }) {
       depthWrite: false
     });
 
-    return { bodyGeo, lensGeo, beamGeo, reelRimGeo, reelHubGeo, spokeGeo, chassisMat, crimsonMat, beamMat };
+    return { bodyGeo, hairlineGeo, lensGeo, beamGeo, reelRimGeo, reelHubGeo, spokeGeo, chassisMat, crimsonMat, beamMat };
   }, []);
 
   useEffect(() => {
@@ -471,6 +461,7 @@ function FilmsExhibit({ reducedMotion }) {
   return html`
     <group position=${[-0.25, -0.05, 0]} rotation=${[0, -0.22, 0]}>
       <mesh geometry=${res.bodyGeo} material=${res.chassisMat} position=${[0, -0.1, 0]} />
+      <mesh geometry=${res.hairlineGeo} material=${res.crimsonMat} position=${[0, 0.15, 0]} />
       <mesh geometry=${res.lensGeo} material=${res.chassisMat} position=${[0.7, -0.05, 0]} rotation=${[0, 0, Math.PI / 2]} />
       <mesh geometry=${res.beamGeo} material=${res.beamMat} position=${[1.65, -0.05, 0]} rotation=${[0, 0, Math.PI / 2]} />
       ${renderReel(reelARef, [-0.46, 0.56, 0])}
@@ -488,36 +479,46 @@ function SeriesExhibit({ reducedMotion }) {
   const res = useMemo(() => {
     const scanTex = makeScanlineTexture();
     const housingGeo = new THREE.BoxGeometry(1.36, 1.04, 0.92);
+    const wireFrameGeo = new THREE.BoxGeometry(1.42, 1.1, 0.98);
     const backGeo = new THREE.BoxGeometry(0.84, 0.66, 0.36);
     const screenGeo = new THREE.PlaneGeometry(1.16, 0.84);
-    const ringGeo = new THREE.TorusGeometry(1.24, 0.025, 10, 48);
+    const ringGeo = new THREE.TorusGeometry(1.24, 0.02, 10, 52);
 
-    const housingMat = new THREE.MeshStandardMaterial({ color: '#111827', roughness: 0.4, metalness: 0.65 });
-    const screenMat = new THREE.MeshBasicMaterial({ map: scanTex });
-    const cyanRingMat = new THREE.MeshStandardMaterial({
+    const housingMat = new THREE.MeshLambertMaterial({ color: '#111827' });
+    const wireMat = new THREE.MeshLambertMaterial({
       color: '#38bdf8',
       emissive: '#0284c7',
-      emissiveIntensity: 1.65,
-      roughness: 0.2
+      emissiveIntensity: 0.7,
+      wireframe: true
     });
-    const pinkRingMat = new THREE.MeshStandardMaterial({
+    const screenMat = new THREE.MeshBasicMaterial({ map: scanTex });
+    const cyanRingMat = new THREE.MeshLambertMaterial({
+      color: '#38bdf8',
+      emissive: '#0284c7',
+      emissiveIntensity: 1.65
+    });
+    const pinkRingMat = new THREE.MeshLambertMaterial({
       color: '#f472b6',
       emissive: '#db2777',
-      emissiveIntensity: 1.35,
-      roughness: 0.2
+      emissiveIntensity: 1.35
     });
 
-    return { scanTex, housingGeo, backGeo, screenGeo, ringGeo, housingMat, screenMat, cyanRingMat, pinkRingMat };
+    return {
+      scanTex, housingGeo, wireFrameGeo, backGeo, screenGeo, ringGeo,
+      housingMat, wireMat, screenMat, cyanRingMat, pinkRingMat
+    };
   }, []);
 
   useEffect(() => {
     return () => {
       res.scanTex.dispose();
       res.housingGeo.dispose();
+      res.wireFrameGeo.dispose();
       res.backGeo.dispose();
       res.screenGeo.dispose();
       res.ringGeo.dispose();
       res.housingMat.dispose();
+      res.wireMat.dispose();
       res.screenMat.dispose();
       res.cyanRingMat.dispose();
       res.pinkRingMat.dispose();
@@ -544,6 +545,7 @@ function SeriesExhibit({ reducedMotion }) {
     <group position=${[0, 0.1, 0]}>
       <group ref=${crtRef}>
         <mesh geometry=${res.housingGeo} material=${res.housingMat} />
+        <mesh geometry=${res.wireFrameGeo} material=${res.wireMat} />
         <mesh geometry=${res.backGeo} material=${res.housingMat} position=${[0, 0, -0.56]} />
         <mesh geometry=${res.screenGeo} material=${res.screenMat} position=${[0, 0, 0.47]} />
       </group>
@@ -553,40 +555,98 @@ function SeriesExhibit({ reducedMotion }) {
   `;
 }
 
-/* ── 6. Rewatch Albums Exhibit: Sleek Vinyl Turntable + Spinning Record + Tonearm + Amber Label ── */
-function AlbumsExhibit({ reducedMotion }) {
+/* ── 6. Rewatch Albums Exhibit: Sleek Vinyl Turntable + Spinning Record + Tonearm + Album Cover Label ── */
+function AlbumsExhibit({ albumCoverUrl, reducedMotion }) {
   const platterRef = useRef(null);
+  const coverUrl =
+    albumCoverUrl ||
+    window.ANSH_DATA?.rewatchCorners?.rewatch_albums?.items?.[0]?.img ||
+    '';
 
   const res = useMemo(() => {
     const vinylTex = makeVinylTexture();
-    const plinthGeo = new THREE.BoxGeometry(2.35, 0.24, 1.82);
-    const trimGeo = new THREE.BoxGeometry(2.39, 0.045, 1.86);
-    const recordGeo = new THREE.CylinderGeometry(0.76, 0.76, 0.035, 36);
-    const labelGeo = new THREE.CylinderGeometry(0.24, 0.24, 0.042, 24);
-    const spindleGeo = new THREE.CylinderGeometry(0.025, 0.025, 0.1, 10);
-    const pivotGeo = new THREE.CylinderGeometry(0.11, 0.13, 0.18, 14);
-    const armGeo = new THREE.CylinderGeometry(0.022, 0.022, 1.05, 10);
-    const headGeo = new THREE.BoxGeometry(0.09, 0.05, 0.16);
+    const plinthGeo = new THREE.BoxGeometry(2.35, 0.22, 1.82);
+    const trimGeo = new THREE.BoxGeometry(2.39, 0.02, 1.86);
+    const recordGeo = new THREE.CylinderGeometry(0.76, 0.76, 0.032, 36);
+    const labelGeo = new THREE.CylinderGeometry(0.24, 0.24, 0.04, 24);
+    const spindleGeo = new THREE.CylinderGeometry(0.022, 0.022, 0.1, 10);
+    const pivotGeo = new THREE.CylinderGeometry(0.1, 0.12, 0.16, 14);
+    const armGeo = new THREE.CylinderGeometry(0.016, 0.016, 1.05, 10);
+    const headGeo = new THREE.BoxGeometry(0.08, 0.04, 0.15);
 
-    const plinthMat = new THREE.MeshStandardMaterial({ color: '#11131d', roughness: 0.35, metalness: 0.65 });
-    const amberMat = new THREE.MeshStandardMaterial({
+    const plinthMat = new THREE.MeshLambertMaterial({ color: '#11131d' });
+    const amberMat = new THREE.MeshLambertMaterial({
       color: '#f59e0b',
       emissive: '#d97706',
-      emissiveIntensity: 1.35,
-      roughness: 0.25
+      emissiveIntensity: 1.3
     });
-    const recordMat = new THREE.MeshStandardMaterial({
+    const labelMat = new THREE.MeshLambertMaterial({
+      color: '#f59e0b',
+      emissive: '#d97706',
+      emissiveIntensity: 1.15
+    });
+    const recordMat = new THREE.MeshLambertMaterial({
       map: vinylTex,
-      roughness: 0.22,
-      metalness: 0.72
+      color: '#e2e8f0'
     });
-    const chromeMat = new THREE.MeshStandardMaterial({ color: '#cbd5e1', roughness: 0.18, metalness: 0.9 });
+    const chromeMat = new THREE.MeshLambertMaterial({ color: '#cbd5e1' });
 
     return {
       vinylTex, plinthGeo, trimGeo, recordGeo, labelGeo, spindleGeo, pivotGeo, armGeo, headGeo,
-      plinthMat, amberMat, recordMat, chromeMat
+      plinthMat, amberMat, labelMat, recordMat, chromeMat
     };
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    let loadedTex = null;
+
+    const resetFallback = () => {
+      res.labelMat.map = null;
+      res.labelMat.color.set('#f59e0b');
+      res.labelMat.emissive.set('#d97706');
+      res.labelMat.emissiveIntensity = 1.15;
+      res.labelMat.needsUpdate = true;
+    };
+
+    resetFallback();
+
+    if (coverUrl) {
+      const loader = new THREE.TextureLoader();
+      loader.setCrossOrigin('anonymous');
+      loader.load(
+        coverUrl,
+        tex => {
+          if (cancelled) {
+            tex.dispose();
+            return;
+          }
+          tex.colorSpace = THREE.SRGBColorSpace;
+          loadedTex = tex;
+          res.labelMat.map = tex;
+          res.labelMat.color.set('#ffffff');
+          res.labelMat.emissive.set('#000000');
+          res.labelMat.emissiveIntensity = 0;
+          res.labelMat.needsUpdate = true;
+        },
+        undefined,
+        () => {
+          if (!cancelled) resetFallback();
+        }
+      );
+    }
+
+    return () => {
+      cancelled = true;
+      if (loadedTex) {
+        if (res.labelMat.map === loadedTex) {
+          resetFallback();
+        }
+        loadedTex.dispose();
+        loadedTex = null;
+      }
+    };
+  }, [coverUrl, res]);
 
   useEffect(() => {
     return () => {
@@ -607,7 +667,7 @@ function AlbumsExhibit({ reducedMotion }) {
 
       <group ref=${platterRef} position=${[-0.22, 0.14, 0.02]}>
         <mesh geometry=${res.recordGeo} material=${res.recordMat} />
-        <mesh geometry=${res.labelGeo} material=${res.amberMat} position=${[0, 0.005, 0]} />
+        <mesh geometry=${res.labelGeo} material=${res.labelMat} position=${[0, 0.005, 0]} />
         <mesh geometry=${res.spindleGeo} material=${res.chromeMat} position=${[0, 0.04, 0]} />
       </group>
 
@@ -630,22 +690,21 @@ function SongsExhibit({ audioPlaying, reducedMotion }) {
   const BAR_COUNT = 16;
 
   const res = useMemo(() => {
-    const baseGeo = new THREE.CylinderGeometry(1.12, 1.24, 0.16, 32);
-    const coreGeo = new THREE.CylinderGeometry(0.24, 0.24, 1.2, 18);
-    const barGeo = new THREE.BoxGeometry(0.14, 1.0, 0.14);
+    const baseGeo = new THREE.CylinderGeometry(1.12, 1.24, 0.14, 32);
+    const baseRingGeo = new THREE.TorusGeometry(0.82, 0.018, 8, 44);
+    const coreGeo = new THREE.CylinderGeometry(0.22, 0.22, 1.2, 18);
+    const barGeo = new THREE.BoxGeometry(0.09, 1.0, 0.09);
 
-    const baseMat = new THREE.MeshStandardMaterial({ color: '#141724', roughness: 0.4, metalness: 0.75 });
-    const coreMat = new THREE.MeshStandardMaterial({
+    const baseMat = new THREE.MeshLambertMaterial({ color: '#141724' });
+    const coreMat = new THREE.MeshLambertMaterial({
       color: '#fbcfe8',
       emissive: '#f472b6',
-      emissiveIntensity: 1.5,
-      roughness: 0.2
+      emissiveIntensity: 1.5
     });
-    const barMat = new THREE.MeshStandardMaterial({
+    const barMat = new THREE.MeshLambertMaterial({
       color: '#f472b6',
       emissive: '#ec4899',
-      emissiveIntensity: 1.7,
-      roughness: 0.25
+      emissiveIntensity: 1.7
     });
 
     const ringItems = [];
@@ -658,12 +717,13 @@ function SongsExhibit({ audioPlaying, reducedMotion }) {
       });
     }
 
-    return { baseGeo, coreGeo, barGeo, baseMat, coreMat, barMat, ringItems };
+    return { baseGeo, baseRingGeo, coreGeo, barGeo, baseMat, coreMat, barMat, ringItems };
   }, []);
 
   useEffect(() => {
     return () => {
       res.baseGeo.dispose();
+      res.baseRingGeo.dispose();
       res.coreGeo.dispose();
       res.barGeo.dispose();
       res.baseMat.dispose();
@@ -699,6 +759,7 @@ function SongsExhibit({ audioPlaying, reducedMotion }) {
   return html`
     <group ref=${towerRef} position=${[0, 0.1, 0]}>
       <mesh geometry=${res.baseGeo} material=${res.baseMat} position=${[0, -0.58, 0]} />
+      <mesh geometry=${res.baseRingGeo} material=${res.coreMat} position=${[0, -0.5, 0]} rotation=${[Math.PI / 2, 0, 0]} />
       <mesh geometry=${res.coreGeo} material=${res.coreMat} position=${[0, 0.05, 0]} />
       ${res.ringItems.map((it, idx) => html`
         <mesh
@@ -725,27 +786,23 @@ function ContactExhibit({ transmitting, reducedMotion }) {
   const res = useMemo(() => {
     const coreGeo = new THREE.OctahedronGeometry(0.56, 0);
     const shellGeo = new THREE.OctahedronGeometry(0.76, 0);
-    const ringGeo = new THREE.TorusGeometry(1.16, 0.028, 12, 48);
+    const ringGeo = new THREE.TorusGeometry(1.16, 0.02, 10, 52);
 
-    const coreMat = new THREE.MeshStandardMaterial({
+    const coreMat = new THREE.MeshLambertMaterial({
       color: '#fbcfe8',
       emissive: '#f472b6',
-      emissiveIntensity: 1.9,
-      roughness: 0.15,
-      metalness: 0.5
+      emissiveIntensity: 1.85
     });
-    const shellMat = new THREE.MeshStandardMaterial({
+    const shellMat = new THREE.MeshLambertMaterial({
       color: '#f472b6',
       emissive: '#db2777',
       emissiveIntensity: 0.85,
       wireframe: true
     });
-    const ringMat = new THREE.MeshStandardMaterial({
+    const ringMat = new THREE.MeshLambertMaterial({
       color: '#f9a8d4',
       emissive: '#ec4899',
-      emissiveIntensity: 1.45,
-      roughness: 0.2,
-      metalness: 0.8
+      emissiveIntensity: 1.45
     });
 
     return { coreGeo, shellGeo, ringGeo, coreMat, shellMat, ringMat };
@@ -784,8 +841,10 @@ function ContactExhibit({ transmitting, reducedMotion }) {
   `;
 }
 
+const DEFAULT_ORBIT = { theta: 0.22, phi: 1.24, radius: 4.35 };
+
 /* ── Spherical Pointer Orbit & Auto-Rotate Rig ── */
-function ShowcaseCameraRig({ orbitRef, reducedMotion }) {
+function ShowcaseCameraRig({ orbitRef, reducedMotion, onResetOrbit }) {
   const { camera, gl } = useThree();
   const target = useMemo(() => new THREE.Vector3(0, 0.05, 0), []);
   const draggingRef = useRef(false);
@@ -818,18 +877,24 @@ function ShowcaseCameraRig({ orbitRef, reducedMotion }) {
       draggingRef.current = false;
     };
 
+    const onDblClick = () => {
+      onResetOrbit?.();
+    };
+
     dom.addEventListener('pointerdown', onDown);
+    dom.addEventListener('dblclick', onDblClick);
     window.addEventListener('pointermove', onMove);
     window.addEventListener('pointerup', onUp);
     window.addEventListener('pointercancel', onUp);
 
     return () => {
       dom.removeEventListener('pointerdown', onDown);
+      dom.removeEventListener('dblclick', onDblClick);
       window.removeEventListener('pointermove', onMove);
       window.removeEventListener('pointerup', onUp);
       window.removeEventListener('pointercancel', onUp);
     };
-  }, [gl, orbitRef]);
+  }, [gl, orbitRef, onResetOrbit]);
 
   useFrame((_, delta) => {
     if (!reducedMotion && !draggingRef.current) {
@@ -853,7 +918,7 @@ function ShowcaseCameraRig({ orbitRef, reducedMotion }) {
 }
 
 /* ── Exhibit Switcher Stage ── */
-function ExhibitStage({ sceneId, props, osReducedMotion, orbitRef }) {
+function ExhibitStage({ sceneId, props, osReducedMotion, orbitRef, onResetOrbit }) {
   const reducedMotion = Boolean(props?.reducedMotion || osReducedMotion);
 
   const renderExhibit = () => {
@@ -869,7 +934,7 @@ function ExhibitStage({ sceneId, props, osReducedMotion, orbitRef }) {
       case 'rewatch_series':
         return html`<${SeriesExhibit} reducedMotion=${reducedMotion} />`;
       case 'rewatch_albums':
-        return html`<${AlbumsExhibit} reducedMotion=${reducedMotion} />`;
+        return html`<${AlbumsExhibit} albumCoverUrl=${props?.albumCoverUrl} reducedMotion=${reducedMotion} />`;
       case 'rewatch_songs':
         return html`<${SongsExhibit} audioPlaying=${Boolean(props?.audioPlaying)} reducedMotion=${reducedMotion} />`;
       case 'contact':
@@ -880,14 +945,12 @@ function ExhibitStage({ sceneId, props, osReducedMotion, orbitRef }) {
   };
 
   return html`
-    <ambientLight intensity=${0.85} color="#cbd5e1" />
-    <hemisphereLight args=${['#38bdf8', '#1e1b2e', 0.65]} />
-    <directionalLight position=${[3, 5, 4]} intensity=${1.9} color="#ffffff" />
-    <directionalLight position=${[-4, -2, -3]} intensity=${0.8} color="#f472b6" />
-    <pointLight position=${[0, 2.5, 2.5]} intensity=${3.5} distance=${9} color="#38bdf8" />
+    <ambientLight intensity=${0.95} color="#cbd5e1" />
+    <hemisphereLight args=${['#38bdf8', '#1e1b2e', 0.85]} />
+    <directionalLight position=${[3, 5, 4]} intensity=${1.75} color="#ffffff" />
 
     ${renderExhibit()}
-    <${ShowcaseCameraRig} orbitRef=${orbitRef} reducedMotion=${reducedMotion} />
+    <${ShowcaseCameraRig} orbitRef=${orbitRef} reducedMotion=${reducedMotion} onResetOrbit=${onResetOrbit} />
   `;
 }
 
@@ -897,14 +960,27 @@ function ShowcaseApp({ controller }) {
   const [osReducedMotion, setOsReducedMotion] = useState(() =>
     Boolean(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches)
   );
-  const orbitRef = useRef({ theta: 0.25, phi: 1.24, radius: 4.35 });
+  const orbitRef = useRef({ ...DEFAULT_ORBIT });
+  const reducedMotion = Boolean(state.props?.reducedMotion || osReducedMotion);
+  const isEco = Boolean(state.props?.eco || state.props?.effectiveEco);
+
+  const resetOrbit = useMemo(
+    () => () => {
+      orbitRef.current.theta = DEFAULT_ORBIT.theta;
+      orbitRef.current.phi = DEFAULT_ORBIT.phi;
+      orbitRef.current.radius = DEFAULT_ORBIT.radius;
+    },
+    []
+  );
 
   useEffect(() => {
     controller.subscribe = setState;
+    controller.resetOrbit = resetOrbit;
     return () => {
       if (controller.subscribe === setState) controller.subscribe = null;
+      if (controller.resetOrbit === resetOrbit) controller.resetOrbit = null;
     };
-  }, [controller]);
+  }, [controller, resetOrbit]);
 
   useEffect(() => {
     if (!window.matchMedia) return;
@@ -916,9 +992,8 @@ function ShowcaseApp({ controller }) {
 
   useEffect(() => {
     /* Reset framing gently when switching exhibit */
-    orbitRef.current.theta = 0.22;
-    orbitRef.current.phi = 1.24;
-  }, [state.sceneId]);
+    resetOrbit();
+  }, [state.sceneId, resetOrbit]);
 
   const handleCreated = ({ gl }) => {
     gl.domElement.addEventListener('webglcontextlost', e => {
@@ -929,7 +1004,7 @@ function ShowcaseApp({ controller }) {
   return html`
     <${ShowcaseErrorBoundary}>
       <${Canvas}
-        dpr=${[1, 2]}
+        dpr=${reducedMotion || isEco ? 1 : [1, 1.5]}
         shadows=${false}
         frameloop=${state.active ? 'always' : 'never'}
         gl=${{
@@ -945,6 +1020,7 @@ function ShowcaseApp({ controller }) {
           props=${state.props}
           osReducedMotion=${osReducedMotion}
           orbitRef=${orbitRef}
+          onResetOrbit=${resetOrbit}
         />
       <//>
     <//>
@@ -957,6 +1033,7 @@ const controller = {
   hostEl: null,
   parkContainer: null,
   subscribe: null,
+  resetOrbit: null,
   state: {
     active: false,
     sceneId: 'about',
@@ -1011,6 +1088,10 @@ window.AnshShowcase3D = {
       props: { ...controller.state.props, ...props }
     };
     emitState();
+  },
+
+  resetView() {
+    controller.resetOrbit?.();
   },
 
   park() {

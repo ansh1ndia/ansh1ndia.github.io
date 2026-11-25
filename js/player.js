@@ -10,6 +10,8 @@ window.AnshPlayer = (() => {
     speed: 155,
     sprintSpeed: 240,
     sprinting: false,
+    sitting: false,
+    standingPos: null,
     dir: 'up',
     moving: false,
     walkTime: 0,
@@ -49,6 +51,28 @@ window.AnshPlayer = (() => {
     state.pendingTarget = null;
   };
 
+  const sitOnBench = benchObj => {
+    if (!benchObj) return;
+    if (!state.sitting) {
+      state.standingPos = { x: state.x, y: state.y };
+      state.x = benchObj.benchX ?? (benchObj.tx * T + 16);
+      state.y = (benchObj.benchY ?? (benchObj.ty * T + 16)) - 2;
+      state.dir = 'down';
+      state.sitting = true;
+      state.moving = false;
+    }
+  };
+
+  const standUp = () => {
+    if (!state.sitting) return;
+    if (state.standingPos) {
+      state.x = state.standingPos.x;
+      state.y = state.standingPos.y;
+    }
+    state.standingPos = null;
+    state.sitting = false;
+  };
+
   const update = (dt, inputKeys, blocked, onArrive) => {
     if (blocked) {
       state.moving = false;
@@ -62,6 +86,16 @@ window.AnshPlayer = (() => {
     if (inputKeys.right) dx += 1;
     if (inputKeys.up)    dy -= 1;
     if (inputKeys.down)  dy += 1;
+
+    if (state.sitting) {
+      if (dx !== 0 || dy !== 0) {
+        standUp();
+      } else {
+        state.moving = false;
+        state.idleTime += dt;
+        return null;
+      }
+    }
 
     if (dx !== 0 || dy !== 0) {
       cancelAutoMove();
@@ -184,6 +218,28 @@ window.AnshPlayer = (() => {
     ctx.fillStyle = 'rgba(0,0,0,0.52)';
     ctx.fillRect(px - 8, py + 7, 16, 4);
 
+    if (state.sitting) {
+      /* Seated relaxed chill pose on bench */
+      const sb = Math.round(Math.sin(state.idleTime * 1.8) * 0.5);
+      ctx.fillStyle = '#3f3f46';
+      ctx.fillRect(px - 6, py + 3, 5, 4);
+      ctx.fillRect(px + 1, py + 3, 5, 4);
+      ctx.fillStyle = '#e4e4e7';
+      ctx.fillRect(px - 7, py - 5 + sb, 14, 10);
+      ctx.fillStyle = '#18181b';
+      ctx.fillRect(px - 5, py - 2 + sb, 10, 6);
+      ctx.fillStyle = '#ef4444';
+      ctx.fillRect(px - 7, py - 5 + sb, 14, 3);
+      ctx.fillStyle = '#f4f4f5';
+      ctx.fillRect(px - 6, py - 15 + sb, 12, 10);
+      ctx.fillStyle = '#dc2626';
+      ctx.fillRect(px - 7, py - 18 + sb, 14, 5);
+      ctx.fillStyle = '#09090b';
+      ctx.fillRect(px - 4, py - 10 + sb, 2, 2);
+      ctx.fillRect(px + 2, py - 10 + sb, 2, 2);
+      return;
+    }
+
     /* Boots */
     ctx.fillStyle = '#3f3f46';
     ctx.fillRect(px - 6, py + 4 + (legOffset > 0 ? -1 : 0), 5, 5);
@@ -226,6 +282,8 @@ window.AnshPlayer = (() => {
     update,
     draw,
     moveToPoint,
-    cancelAutoMove
+    cancelAutoMove,
+    sitOnBench,
+    standUp
   };
 })();

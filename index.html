@@ -4,14 +4,13 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#05070c" />
-  <meta name="description" content="ANSH TOWN — Interactive 2D & React Three.js 3D cyberpunk portfolio by Ansh (Lucknow, India) featuring GlyphLens, Arcus, and Rewatch curation." />
-  <title>ANSH TOWN — Interactive 2D/3D Cyberpunk Portfolio</title>
+  <meta name="description" content="ANSH TOWN — Interactive 2D/3D portfolio by Ansh (Lucknow, India) featuring GlyphLens, Arcus, and Rewatch curation." />
+  <title>ANSH TOWN — Interactive Portfolio</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%2305070c'/%3E%3Crect x='4' y='4' width='24' height='24' fill='none' stroke='%23ef4444' stroke-width='2.5'/%3E%3Crect x='12' y='12' width='8' height='8' fill='%23ef4444'/%3E%3C/svg%3E" />
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="preconnect" href="https://esm.sh" crossorigin />
-  <link rel="preconnect" href="https://unpkg.com" crossorigin />
   <link rel="preconnect" href="https://image.tmdb.org" />
   <link rel="preconnect" href="https://coverartarchive.org" />
 
@@ -32,9 +31,7 @@
       "three/": "https://esm.sh/three@0.185.1/",
       "three/addons/": "https://esm.sh/three@0.185.1/examples/jsm/",
       "@react-three/fiber": "https://esm.sh/@react-three/fiber@9.1.2?external=react,react-dom,three",
-      "htm": "https://esm.sh/htm@3.1.1",
-      "gsap": "https://esm.sh/gsap@3.13.0",
-      "canvas-confetti": "https://esm.sh/canvas-confetti@1.9.3"
+      "htm": "https://esm.sh/htm@3.1.1"
     }
   }
   </script>
@@ -49,16 +46,16 @@
     <!-- React + Three.js + React Three Fiber 3D World Mount -->
     <div id="world3dMount" class="world-3d-mount" aria-hidden="true"></div>
 
-    <!-- Floating 3D Prompt Pill (mirrors active interactable cleanly in 3D mode) -->
+    <!-- Minimal Floating 3D Perspective Switch -->
     <div class="world3d-hud-chip" id="world3dHudChip" aria-hidden="true">
       <button type="button" class="chip-cam-btn" id="btn3dCam" title="Toggle 3D Camera Perspective">
-        <i data-lucide="camera"></i>
+        <i data-lucide="camera" aria-hidden="true"></i>
         <span id="camModeLabel">Chase Cam</span>
       </button>
       <span class="chip-prompt" id="world3dPrompt">Drag to orbit · Scroll to zoom</span>
     </div>
 
-    <!-- Top Integrated Game Navigation HUD -->
+    <!-- Top Integrated Navigation HUD (Decluttered 3-Action System Rail) -->
     <header class="hud-top">
       <button type="button" class="hud-brand" id="brandHome" aria-label="Ansh Town Home">
         <span class="brand-box" aria-hidden="true"><span></span></span>
@@ -98,25 +95,17 @@
       </nav>
 
       <div class="hud-sys">
-        <button type="button" class="sys-btn sys-btn-dim" id="btnDimension" aria-pressed="false" title="Toggle 2D Pixel / 3D WebGL Town [V]" aria-label="Toggle 3D WebGL View">
+        <button type="button" class="sys-btn sys-btn-dim" id="btnDimension" aria-pressed="false" title="Toggle 2D Pixel / 3D View [V]" aria-label="Toggle 3D View">
           <i data-lucide="box" aria-hidden="true"></i>
-          <span class="hud-btn-lbl hud-btn-dim-lbl">3D View</span>
+          <span class="hud-btn-lbl hud-btn-dim-lbl">3D</span>
         </button>
-        <button type="button" class="sys-btn" id="btnPassport" aria-expanded="false" aria-controls="passportDrawer" title="Discovery Passport [P]">
-          <i data-lucide="compass" aria-hidden="true"></i>
-          <span class="hud-btn-lbl" id="passportBadge">0/10</span>
-        </button>
-        <button type="button" class="sys-btn" id="btnSound" aria-pressed="false" title="Toggle Rain & SFX">
+        <button type="button" class="sys-btn" id="btnSound" aria-pressed="false" title="Toggle Rain & SFX" aria-label="Toggle Audio">
           <i data-lucide="audio-lines" aria-hidden="true"></i>
           <span class="hud-btn-lbl">Muted</span>
         </button>
-        <button type="button" class="sys-btn" id="btnSettings" aria-expanded="false" aria-controls="settingsPanel" title="World Settings" aria-label="World Settings">
+        <button type="button" class="sys-btn" id="btnSettings" aria-expanded="false" aria-controls="settingsPanel" title="System Settings, Quality, Passport & Actions" aria-label="System Settings">
           <i data-lucide="sliders-horizontal" aria-hidden="true"></i>
           <span class="hud-btn-lbl">Settings</span>
-        </button>
-        <button type="button" class="sys-btn" id="btnFullscreen" title="Toggle Fullscreen" aria-label="Toggle Fullscreen">
-          <i data-lucide="maximize-2" aria-hidden="true"></i>
-          <span class="hud-btn-lbl">Fullscreen</span>
         </button>
       </div>
     </header>
@@ -127,13 +116,13 @@
       <span class="zb-v" id="zoneBannerTitle">CENTRAL PLAZA</span>
     </div>
 
-    <!-- Discovery Achievement Toast -->
+    <!-- Passport Unlock Toast -->
     <div class="stamp-toast" id="stampToast" role="status" aria-live="polite">
       <i data-lucide="sparkles" aria-hidden="true"></i>
       <span id="stampToastText">Passport Stamp Unlocked</span>
     </div>
 
-    <!-- Persistent Music Mini-Player Bar (active across Rewatch & Town) -->
+    <!-- Persistent Floating Now-Playing Dock -->
     <aside class="now-playing-bar" id="nowPlayingBar" aria-label="Now Playing" aria-hidden="true">
       <button type="button" class="np-play" id="npPlayBtn" aria-label="Pause or resume track">
         <i class="fas fa-pause" aria-hidden="true"></i>
@@ -153,7 +142,7 @@
       </button>
     </aside>
 
-    <!-- Explorer Passport Drawer -->
+    <!-- Explorer Passport Drawer (Opened from Settings or [P]) -->
     <section class="passport-drawer" id="passportDrawer" aria-label="Explorer Passport">
       <div class="set-head">
         <span>TOWN // PASSPORT</span>
@@ -168,28 +157,49 @@
       </div>
     </section>
 
-    <!-- World Settings Drawer -->
-    <section class="settings-panel" id="settingsPanel" aria-label="World Settings">
+    <!-- Unified Settings & Utilities Drawer -->
+    <section class="settings-panel" id="settingsPanel" aria-label="System Settings">
       <div class="set-head">
         <span>SYSTEM // SETTINGS</span>
         <button type="button" class="set-close" id="closeSettings" aria-label="Close Settings">ESC</button>
       </div>
       <div class="set-body">
         <div class="set-row">
-          <span class="set-lbl">World Dimension</span>
+          <span class="set-lbl">Quality Profile</span>
+          <div class="set-seg">
+            <button type="button" class="seg-btn active" data-set-quality="auto">Auto</button>
+            <button type="button" class="seg-btn" data-set-quality="high">High</button>
+            <button type="button" class="seg-btn" data-set-quality="eco">Eco 60fps</button>
+          </div>
+        </div>
+        <div class="set-row">
+          <span class="set-lbl">Dimension</span>
           <div class="set-seg">
             <button type="button" class="seg-btn active" data-set-dim="2d">2D Pixel</button>
             <button type="button" class="seg-btn" data-set-dim="3d">3D WebGL</button>
           </div>
         </div>
         <div class="set-row">
-          <span class="set-lbl">Rain Intensity</span>
+          <span class="set-lbl">Atmosphere</span>
+          <div class="set-seg set-seg-mood">
+            <button type="button" class="seg-btn active" data-set-mood="midnight">Night</button>
+            <button type="button" class="seg-btn" data-set-mood="bloodmoon">Crimson</button>
+            <button type="button" class="seg-btn" data-set-mood="sakura">Sakura</button>
+            <button type="button" class="seg-btn" data-set-mood="matrix">Matrix</button>
+          </div>
+        </div>
+        <div class="set-row">
+          <span class="set-lbl">Rain</span>
           <div class="set-seg">
             <button type="button" class="seg-btn active" data-set-rain="normal">Full</button>
             <button type="button" class="seg-btn" data-set-rain="light">Light</button>
             <button type="button" class="seg-btn" data-set-rain="off">Off</button>
           </div>
         </div>
+        <label class="set-row" for="optVolume">
+          <span class="set-lbl">Volume</span>
+          <input type="range" id="optVolume" min="0" max="100" value="85" class="set-range" />
+        </label>
         <label class="set-check" for="optBloom">
           <span>Neon Glow &amp; Streetlamps</span>
           <input type="checkbox" id="optBloom" checked />
@@ -199,20 +209,25 @@
           <input type="checkbox" id="optLightning" checked />
         </label>
         <label class="set-check" for="optAmbience">
-          <span>Midnight Synth Pad (Unmuted)</span>
+          <span>Midnight Synth Pad</span>
           <input type="checkbox" id="optAmbience" checked />
         </label>
         <label class="set-check" for="optReducedMotion">
           <span>Reduced Motion</span>
           <input type="checkbox" id="optReducedMotion" />
         </label>
+        <div class="set-util-row">
+          <button type="button" class="set-util-btn" id="btnPassport">Passport (<span id="passportBadge">0/10</span>)</button>
+          <button type="button" class="set-util-btn" id="btnSnap">Save PNG [C]</button>
+          <button type="button" class="set-util-btn" id="btnFullscreen">Fullscreen</button>
+        </div>
         <div class="set-keys">
           <span><kbd>WASD</kbd> / Arrows: Move</span>
           <span><kbd>Shift</kbd> Sprint</span>
           <span><kbd>E</kbd> Interact</span>
           <span><kbd>V</kbd> 2D / 3D</span>
-          <span><kbd>M</kbd> Minimap</span>
-          <span><kbd>P</kbd> Passport</span>
+          <span><kbd>Ctrl+K</kbd> Palette</span>
+          <span><kbd>M</kbd> Map</span>
         </div>
       </div>
     </section>
@@ -222,14 +237,17 @@
       <div class="ctx-top">
         <button type="button" class="ctx-icon" id="ctxToggle" aria-label="Toggle info panel">i</button>
         <div class="ctx-copy">
-          <div class="ctx-zone" id="hudZoneTitle">WELCOME TO ANSH TOWN</div>
+          <div class="ctx-head-row">
+            <div class="ctx-zone" id="hudZoneTitle">WELCOME TO ANSH TOWN</div>
+            <span class="ctx-coords" id="hudCoords">(20, 19)</span>
+          </div>
           <p class="ctx-msg" id="hudContextMsg">a digital town built around my projects. explore, interact and know my work.</p>
         </div>
       </div>
-      <div class="ctx-hint" id="hudContextHint">[E] interact   [WASD] move   [SHIFT] sprint   [V] 3D</div>
+      <div class="ctx-hint" id="hudContextHint">[E] interact   [WASD] move   [SHIFT] sprint   [Ctrl+K] menu</div>
     </aside>
 
-    <!-- Bottom-Right Interactive Minimap -->
+    <!-- Bottom-Right Minimap -->
     <aside class="hud-minimap" id="minimapPanel" aria-label="Town Minimap">
       <div class="mm-head">
         <span>N</span>
@@ -266,13 +284,26 @@
     </div>
   </main>
 
-  <!-- Dedicated In-World Location Transition Overlay (Buildings, Board, Terminal) -->
+  <!-- Dedicated In-World Location Transition Overlay -->
   <section class="scene-overlay" id="sceneOverlay" aria-hidden="true" role="dialog" aria-modal="true" aria-label="Location Interior">
     <div id="sceneContent"></div>
   </section>
 
-  <!-- Scene Wipe Curtain -->
+  <!-- Scene Wipe Curtain & Shutter Flash -->
   <div class="scene-curtain" id="sceneCurtain" aria-hidden="true"></div>
+  <div class="snap-flash" id="snapFlash" aria-hidden="true"></div>
+
+  <!-- Quick Command Palette (Ctrl+K) -->
+  <section class="cmd-palette-backdrop" id="cmdBackdrop" aria-hidden="true" role="dialog" aria-modal="true" aria-label="Command Palette">
+    <div class="cmd-palette">
+      <div class="cmd-input-row">
+        <i data-lucide="search" aria-hidden="true"></i>
+        <input type="text" id="cmdInput" placeholder="Jump to project, rewatch corner, 3D mode, eco mode…" autocomplete="off" spellcheck="false" aria-label="Search commands" />
+        <button type="button" class="set-close" id="cmdClose" aria-label="Close Command Palette">ESC</button>
+      </div>
+      <ul class="cmd-list" id="cmdList" role="listbox"></ul>
+    </div>
+  </section>
 
   <script src="js/data.js" defer></script>
   <script src="js/audio.js" defer></script>
@@ -283,13 +314,8 @@
   <script src="js/main.js" defer></script>
   <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js" async onload="window.lucide && window.lucide.createIcons()"></script>
 
-  <!-- Progressive ESM Layer: React 19 + Three.js + React Three Fiber + GSAP + Confetti -->
+  <!-- Lazy/Modular R3F 3D Layer (zero blocking on 2D startup) -->
   <script type="module" src="js/r3f-world.js"></script>
   <script type="module" src="js/r3f-showcases.js"></script>
-  <script type="module">
-    import gsap from 'gsap';
-    import confetti from 'canvas-confetti';
-    window.AnshFX = { gsap, confetti };
-  </script>
 </body>
 </html>

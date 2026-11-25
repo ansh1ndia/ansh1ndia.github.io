@@ -1,4 +1,4 @@
-/* ─── js/scenes.js — Elevated In-World Interiors, R3F 3D Showcases, Continuous Audio & Passport ─── */
+/* ─── js/scenes.js — Elevated In-World Interiors, R3F Showcases, Seekable Audio & Passport ─── */
 window.AnshScenes = (() => {
   const DATA = window.ANSH_DATA;
   const curtain    = document.getElementById('sceneCurtain');
@@ -26,6 +26,7 @@ window.AnshScenes = (() => {
   let topAudio = null;
   let currentSongIndex = -1;
   let reducedMotion = false;
+  let ecoMode = false;
   let passportCallback = null;
 
   /* ── Explorer Passport State ── */
@@ -49,18 +50,10 @@ window.AnshScenes = (() => {
     if (typeof passportCallback === 'function') {
       passportCallback(id, discovered.size, DATA.passportIds.length);
     }
-    if (discovered.size === DATA.passportIds.length && window.AnshFX?.confetti) {
-      window.AnshFX.confetti({
-        particleCount: 80,
-        spread: 70,
-        origin: { y: 0.72 },
-        colors: ['#ef4444', '#38bdf8', '#f472b6', '#f59e0b']
-      });
-    }
     return true;
   };
 
-  /* ── Continuous Top-5 Audio Controller (Persists Across Scenes) ── */
+  /* ── Continuous Seekable Top-5 Audio Controller ── */
   const getSongs = () => DATA.rewatchCorners?.rewatch_songs?.items || [];
 
   const syncMusicVisuals = () => {
@@ -166,17 +159,11 @@ window.AnshScenes = (() => {
     });
   };
 
-  if (npPlayBtn) {
-    npPlayBtn.addEventListener('click', () => {
-      if (currentSongIndex >= 0) playSongAtIndex(currentSongIndex);
-    });
-  }
+  if (npPlayBtn) npPlayBtn.addEventListener('click', () => { if (currentSongIndex >= 0) playSongAtIndex(currentSongIndex); });
   if (npNextBtn) {
     npNextBtn.addEventListener('click', () => {
       const songs = getSongs();
-      if (!songs.length) return;
-      const next = (currentSongIndex + 1) % songs.length;
-      playSongAtIndex(next);
+      if (songs.length) playSongAtIndex((currentSongIndex + 1) % songs.length);
     });
   }
   if (npCloseBtn) npCloseBtn.addEventListener('click', stopTopAudio);
@@ -192,16 +179,16 @@ window.AnshScenes = (() => {
     rpgDialog.setAttribute('aria-hidden', 'false');
     clearInterval(dialogTimer);
     window.AnshAudio.playUI(560);
-    if (reducedMotion) {
+    if (reducedMotion || ecoMode) {
       rpgText.textContent = text;
       return;
     }
     let idx = 0;
     dialogTimer = setInterval(() => {
-      idx++;
+      idx += 2;
       rpgText.textContent = text.slice(0, idx);
       if (idx >= text.length) clearInterval(dialogTimer);
-    }, 13);
+    }, 18);
   };
 
   const closeDialog = () => {
@@ -213,10 +200,10 @@ window.AnshScenes = (() => {
     window.AnshAudio.playUI(420);
   };
 
-  const renderShowcaseBox = (title, hint = 'Drag 3D Artifact to Inspect') => `
+  const renderShowcaseBox = (title, hint = 'Drag 3D · Double-Click Reset') => `
     <div class="r3f-stage">
       <div class="r3f-stage-head">
-        <span>3D INTERACTIVE // ${title}</span>
+        <span>3D VIEWPORT // ${title}</span>
         <small>${hint}</small>
       </div>
       <div class="r3f-canvas-mount" id="r3fShowcaseMount"></div>
@@ -271,12 +258,15 @@ window.AnshScenes = (() => {
           </div>
 
           <aside class="loc-side">
-            ${renderShowcaseBox('OPTICAL OCR SCANNER CORE', 'R3F WebGL · Drag to Orbit')}
+            ${renderShowcaseBox('OPTICAL OCR CORE')}
 
             <div class="sim-panel">
               <div class="sim-head">
                 <span>INTERACTIVE PIPELINE PREVIEW</span>
-                <button type="button" class="sim-toggle" id="glOverlayBtn">Overlay: ON</button>
+                <div class="sim-head-actions">
+                  <button type="button" class="sim-toggle" id="glCaptureBtn">Run Scan</button>
+                  <button type="button" class="sim-toggle" id="glOverlayBtn">Overlay: ON</button>
+                </div>
               </div>
               <div class="sim-stage">
                 <div class="gl-samples">
@@ -285,7 +275,7 @@ window.AnshScenes = (() => {
                   `).join('')}
                 </div>
                 <div class="sim-window-bar" id="glTargetBar">${s0.target}</div>
-                <div class="sim-capture-box">
+                <div class="sim-capture-box" id="glCaptureBox">
                   <span class="sim-tag" id="glCaptureTag">${s0.tag}</span>
                   <div class="sim-ocr-text" id="glSourceText">${s0.sourceText}</div>
                 </div>
@@ -339,7 +329,7 @@ window.AnshScenes = (() => {
         <svg viewBox="0 0 ${W} ${H}" class="arcus-svg" role="img" aria-label="Training volume rising from 11,400 kg in Week 1 to 14,480 kg in Week 6">
           <defs>
             <linearGradient id="arcusFill" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.38" />
+              <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.35" />
               <stop offset="100%" stop-color="#38bdf8" stop-opacity="0.02" />
             </linearGradient>
           </defs>
@@ -360,7 +350,7 @@ window.AnshScenes = (() => {
       const saved = JSON.parse(localStorage.getItem(ARCUS_SETS_KEY) || 'null');
       if (Array.isArray(saved) && saved.length) return saved;
     } catch {}
-    return DATA.arcus.defaultSets;
+    return DATA.arcus.defaultSets.map(s => ({ ...s }));
   };
 
   const renderArcusInterior = () => {
@@ -440,6 +430,11 @@ window.AnshScenes = (() => {
                     </button>
                   `).join('')}
                 </div>
+                <div class="arcus-add-row">
+                  <input type="text" id="arcusNewName" placeholder="Add exercise (e.g. Incline Curl)…" aria-label="New exercise name" />
+                  <input type="text" id="arcusNewMeta" placeholder="3 × 10" aria-label="Sets and reps" class="arcus-meta-in" />
+                  <button type="button" class="sim-toggle" id="arcusAddBtn">+ Add</button>
+                </div>
                 ${renderVolumeChartSVG(a.volumeHistory)}
               </div>
             </div>
@@ -498,7 +493,7 @@ window.AnshScenes = (() => {
           </div>
 
           <aside class="loc-side">
-            ${renderShowcaseBox('STACK CONSTELLATION', 'Drag to Orbit Orbitals')}
+            ${renderShowcaseBox('STACK CONSTELLATION', 'Drag 3D · Double-Click Reset')}
             <div class="spec-panel">
               <h3 class="spec-title">Explore Town Landmarks</h3>
               <div class="quick-jump-grid">
@@ -552,7 +547,7 @@ window.AnshScenes = (() => {
           </div>
 
           <aside class="loc-side">
-            ${renderShowcaseBox('ENCRYPTED DATA PRISM', 'Interactive Comms Core')}
+            ${renderShowcaseBox('ENCRYPTED DATA PRISM', 'Drag 3D · Double-Click Reset')}
           </aside>
         </div>
       </div>`;
@@ -564,7 +559,7 @@ window.AnshScenes = (() => {
         <button type="button" class="play-btn">
           <i class="fas fa-play" aria-hidden="true"></i> <span>Play</span>
         </button>
-        <div class="song-bar"><div class="song-fill"></div></div>
+        <div class="song-bar" role="slider" aria-label="Seek audio preview" tabindex="0" title="Click to seek"><div class="song-fill"></div></div>
         <span class="song-time">0:30</span>
       </div>` : '';
 
@@ -625,25 +620,26 @@ window.AnshScenes = (() => {
 
               <h1 class="loc-title">${rw.title}</h1>
               <p class="loc-tagline">${rw.subtitle}</p>
-              ${id === 'rewatch_songs' ? `
-                <div class="rw-song-bar-actions">
+              <div class="rw-toolbar">
+                ${id === 'rewatch_songs' ? `
                   <button type="button" class="loc-btn loc-btn-primary" id="playAllSongsBtn">
-                    <i class="fas fa-headphones" aria-hidden="true"></i> Play All Top 5 Queue
+                    <i class="fas fa-headphones" aria-hidden="true"></i> Play Top 5 Queue
                   </button>
-                </div>
-              ` : ''}
+                ` : ''}
+                <input type="search" id="rwFilterInput" class="rw-filter-in" placeholder="Filter ${rw.title.toLowerCase()}…" aria-label="Filter ${rw.title}" />
+              </div>
             </div>
 
             <div class="rw-hero-3d">
-              ${renderShowcaseBox(rw.title.toUpperCase() + ' 3D STAGE', id === 'rewatch_songs' ? 'Reacts to Audio Playback' : 'Drag 3D Artifact')}
+              ${renderShowcaseBox(rw.title.toUpperCase() + ' 3D STAGE', id === 'rewatch_songs' ? 'Reacts to Audio · Drag' : 'Drag 3D · Double-Click Reset')}
             </div>
           </div>
 
           <div class="podium-grid">
             ${podiumOrder.map(p => `
-              <div class="podium-slot ${p.tier}">
-                <div class="podium-art ${artCls}">
-                  <img src="${p.item.img}" alt="${p.item.name}" decoding="async" />
+              <div class="podium-slot ${p.tier}" data-rw-card="${(p.item.name + ' ' + p.item.meta).toLowerCase()}">
+                <div class="podium-art rw-art-shimmer ${artCls}">
+                  <img src="${p.item.img}" alt="${p.item.name}" decoding="async" referrerpolicy="no-referrer" />
                   <span class="podium-rank">#0${p.rank}</span>
                 </div>
                 <div class="podium-base">
@@ -659,9 +655,9 @@ window.AnshScenes = (() => {
             <h2 class="loc-h2" style="margin-top:2.2rem">Also in Top 5</h2>
             <div class="rw-thumbs">
               ${restItems.map((item, idx) => `
-                <div class="rw-thumb-card">
-                  <div class="rw-thumb-art ${artCls}">
-                    <img src="${item.img}" alt="${item.name}" loading="lazy" />
+                <div class="rw-thumb-card" data-rw-card="${(item.name + ' ' + item.meta).toLowerCase()}">
+                  <div class="rw-thumb-art rw-art-shimmer ${artCls}">
+                    <img src="${item.img}" alt="${item.name}" loading="lazy" decoding="async" referrerpolicy="no-referrer" />
                     <span class="podium-rank">#0${idx + 4}</span>
                   </div>
                   <div class="rw-thumb-info">
@@ -678,9 +674,9 @@ window.AnshScenes = (() => {
             <h2 class="loc-h2" style="margin-top:2.2rem">${rw.recentLabel}</h2>
             <div class="rw-thumbs">
               ${rw.recent.map(r => `
-                <div class="rw-thumb-card">
-                  <div class="rw-thumb-art ${artCls}">
-                    <img src="${r.img}" alt="${r.name}" loading="lazy" />
+                <div class="rw-thumb-card" data-rw-card="${(r.name + ' ' + r.meta).toLowerCase()}">
+                  <div class="rw-thumb-art rw-art-shimmer ${artCls}">
+                    <img src="${r.img}" alt="${r.name}" loading="lazy" decoding="async" referrerpolicy="no-referrer" />
                   </div>
                   <div class="rw-thumb-info">
                     <div class="rw-name">${r.name}</div>
@@ -699,21 +695,6 @@ window.AnshScenes = (() => {
           </div>
         </div>
       </div>`;
-  };
-
-  const animateEntrance = () => {
-    if (reducedMotion || !window.AnshFX?.gsap) return;
-    const cards = sceneBody.querySelectorAll('.loc-card, .podium-slot, .rw-thumb-card, .spec-panel');
-    if (cards.length) {
-      window.AnshFX.gsap.from(cards, {
-        opacity: 0,
-        y: 16,
-        duration: 0.36,
-        stagger: 0.035,
-        ease: 'power2.out',
-        clearProps: 'transform,opacity'
-      });
-    }
   };
 
   const wireInteriorEvents = id => {
@@ -736,42 +717,92 @@ window.AnshScenes = (() => {
       });
     });
 
-    /* Mount Single Shared R3F 3D Showcase into #r3fShowcaseMount */
+    /* Progressive Artwork Load Fade & Shimmer Removal */
+    sceneBody.querySelectorAll('.rw-art-shimmer img').forEach(img => {
+      const wrap = img.closest('.rw-art-shimmer');
+      const done = () => {
+        img.classList.add('is-loaded');
+        wrap?.classList.add('is-done');
+      };
+      if (img.complete && img.naturalWidth > 0) done();
+      else {
+        img.addEventListener('load', done, { once: true });
+        img.addEventListener('error', done, { once: true });
+      }
+    });
+
+    /* Live Filter Input inside Rewatch Corners */
+    const filterIn = document.getElementById('rwFilterInput');
+    if (filterIn) {
+      filterIn.addEventListener('input', () => {
+        const q = filterIn.value.trim().toLowerCase();
+        sceneBody.querySelectorAll('[data-rw-card]').forEach(card => {
+          const hit = !q || card.dataset.rwCard.includes(q);
+          card.style.display = hit ? '' : 'none';
+        });
+      });
+    }
+
+    /* Mount Shared Persistent R3F Showcase */
     const mount3d = document.getElementById('r3fShowcaseMount');
     if (mount3d) {
       const sets = loadArcusSets();
+      const topAlbumImg = DATA.rewatchCorners?.rewatch_albums?.items?.[0]?.img || '';
       window.AnshShowcase3D?.mountInto?.(mount3d, id, {
         reducedMotion,
+        eco: ecoMode,
         audioPlaying: Boolean(topAudio && !topAudio.paused),
         arcusDoneCount: sets.filter(s => s.done).length,
+        albumCoverUrl: topAlbumImg,
         transmitting: false
       });
     }
 
-    /* Rewatch Songs Players */
+    /* Rewatch Song Players + Click-to-Seek Waveform Scrubber */
     sceneBody.querySelectorAll('.song-player[data-preview]').forEach(box => {
       const btn = box.querySelector('.play-btn');
+      const bar = box.querySelector('.song-bar');
       const idx = Number(box.dataset.songIdx);
       if (btn && idx >= 0) {
         btn.addEventListener('click', () => playSongAtIndex(idx));
       }
+      if (bar && idx >= 0) {
+        bar.addEventListener('click', e => {
+          if (currentSongIndex !== idx || !topAudio || !topAudio.duration) {
+            playSongAtIndex(idx);
+            return;
+          }
+          const rect = bar.getBoundingClientRect();
+          const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+          topAudio.currentTime = ratio * topAudio.duration;
+        });
+      }
     });
 
     const playAllBtn = document.getElementById('playAllSongsBtn');
-    if (playAllBtn) {
-      playAllBtn.addEventListener('click', () => playSongAtIndex(0));
-    }
+    if (playAllBtn) playAllBtn.addEventListener('click', () => playSongAtIndex(0));
     syncMusicVisuals();
 
-    /* GlyphLens Interactive OCR Pipeline */
+    /* GlyphLens Simulator */
     if (id === 'glyphlens') {
       const ovBtn = document.getElementById('glOverlayBtn');
+      const capBtn = document.getElementById('glCaptureBtn');
+      const capBox = document.getElementById('glCaptureBox');
       const ovPill = document.getElementById('glOverlayPill');
       const targetBar = document.getElementById('glTargetBar');
       const capTag = document.getElementById('glCaptureTag');
       const srcTxt = document.getElementById('glSourceText');
       const transMeta = document.getElementById('glTransMeta');
       const transTxt = document.getElementById('glTransText');
+
+      if (capBtn && capBox) {
+        capBtn.addEventListener('click', () => {
+          window.AnshAudio.playUI(720);
+          capBox.classList.remove('gl-scanning');
+          void capBox.offsetWidth;
+          capBox.classList.add('gl-scanning');
+        });
+      }
 
       if (ovBtn && ovPill) {
         ovBtn.addEventListener('click', () => {
@@ -810,26 +841,55 @@ window.AnshScenes = (() => {
       });
     }
 
-    /* Arcus Logger + Timer + Live R3F Plate Coupling */
+    /* Arcus Logger + Custom Exercise Adder + Timer + Live R3F Plate Coupling */
     if (id === 'arcus') {
       const setsWrap = document.getElementById('arcusSets');
       const statEl   = document.getElementById('arcusDoneStat');
       const setsState = loadArcusSets();
 
-      if (setsWrap && statEl) {
-        setsWrap.querySelectorAll('.arcus-set').forEach(btn => {
-          btn.addEventListener('click', () => {
-            const idx = Number(btn.dataset.setIdx);
-            window.AnshAudio.playUI(680);
-            const done = btn.classList.toggle('done');
-            btn.querySelector('.set-chk').textContent = done ? '✓' : '○';
-            btn.querySelector('.set-meta').textContent = done ? 'Saved Local' : 'Tap to Log';
-            if (setsState[idx]) setsState[idx].done = done;
-            try { localStorage.setItem(ARCUS_SETS_KEY, JSON.stringify(setsState)); } catch {}
-            const doneCount = setsState.filter(s => s.done).length;
-            statEl.textContent = `${doneCount} / ${setsState.length} Logged`;
-            window.AnshShowcase3D?.updateProps?.({ arcusDoneCount: doneCount });
-          });
+      const syncArcusUI = () => {
+        const doneCount = setsState.filter(s => s.done).length;
+        if (statEl) statEl.textContent = `${doneCount} / ${setsState.length} Logged`;
+        window.AnshShowcase3D?.updateProps?.({ arcusDoneCount: doneCount });
+        try { localStorage.setItem(ARCUS_SETS_KEY, JSON.stringify(setsState)); } catch {}
+      };
+
+      const bindSetBtn = (btn, idx) => {
+        btn.addEventListener('click', () => {
+          window.AnshAudio.playUI(680);
+          const done = btn.classList.toggle('done');
+          btn.querySelector('.set-chk').textContent = done ? '✓' : '○';
+          btn.querySelector('.set-meta').textContent = done ? 'Saved Local' : 'Tap to Log';
+          if (setsState[idx]) setsState[idx].done = done;
+          syncArcusUI();
+        });
+      };
+
+      if (setsWrap) {
+        setsWrap.querySelectorAll('.arcus-set').forEach((btn, idx) => bindSetBtn(btn, idx));
+      }
+
+      const addBtn = document.getElementById('arcusAddBtn');
+      const newName = document.getElementById('arcusNewName');
+      const newMeta = document.getElementById('arcusNewMeta');
+      if (addBtn && newName && setsWrap) {
+        addBtn.addEventListener('click', () => {
+          const name = newName.value.trim();
+          if (!name) return;
+          const target = (newMeta?.value.trim()) || '3 × 10';
+          const entry = { id: `custom_${Date.now()}`, name, target, done: true };
+          setsState.push(entry);
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'arcus-set done';
+          btn.dataset.setIdx = String(setsState.length - 1);
+          btn.innerHTML = `<span>${entry.name}<small class="set-sub">${entry.target}</small></span><span class="set-meta">Saved Local</span><span class="set-chk">✓</span>`;
+          setsWrap.appendChild(btn);
+          bindSetBtn(btn, setsState.length - 1);
+          newName.value = '';
+          if (newMeta) newMeta.value = '';
+          window.AnshAudio.playUI(720);
+          syncArcusUI();
         });
       }
 
@@ -844,9 +904,8 @@ window.AnshScenes = (() => {
         const s = String(secs % 60).padStart(2, '0');
         if (tVal) tVal.textContent = `${m}:${s}`;
       };
-
       if (tMinus) tMinus.addEventListener('click', () => { secs = Math.max(15, secs - 15); paintTimer(); window.AnshAudio.playUI(480); });
-      if (tPlus) tPlus.addEventListener('click', () => { secs = Math.min(300, secs + 15); paintTimer(); window.AnshAudio.playUI(620); });
+      if (tPlus)  tPlus.addEventListener('click',  () => { secs = Math.min(300, secs + 15); paintTimer(); window.AnshAudio.playUI(620); });
 
       if (tBtn && tVal) {
         tBtn.addEventListener('click', () => {
@@ -859,15 +918,11 @@ window.AnshScenes = (() => {
             tRunning = true;
             tBtn.textContent = 'Pause';
             timerInterval = setInterval(() => {
-              if (secs > 1) {
-                secs--;
-                paintTimer();
-              } else {
-                secs = 90;
-                paintTimer();
+              if (secs > 1) { secs--; paintTimer(); }
+              else {
+                secs = 90; paintTimer();
                 clearInterval(timerInterval);
-                tRunning = false;
-                tBtn.textContent = 'Start';
+                tRunning = false; tBtn.textContent = 'Start';
                 window.AnshAudio.playTimerDone?.();
               }
             }, 1000);
@@ -876,7 +931,6 @@ window.AnshScenes = (() => {
       }
     }
 
-    /* About Live IST Clock */
     if (id === 'about') {
       const clockEl = document.getElementById('lucknowClock');
       const updateClock = () => {
@@ -892,7 +946,6 @@ window.AnshScenes = (() => {
       clockInterval = setInterval(updateClock, 1000);
     }
 
-    /* Contact Terminal + Clipboard Copy + 3D Speed Boost + Confetti */
     if (id === 'contact') {
       const form = document.getElementById('townContactForm');
       const status = document.getElementById('termStatus');
@@ -908,10 +961,7 @@ window.AnshScenes = (() => {
           const fd = new FormData(form);
           const packet = `FROM: ${fd.get('name')} <${fd.get('email')}>\nMSG: ${fd.get('message')}`;
           let copied = false;
-          try {
-            await navigator.clipboard?.writeText(packet);
-            copied = true;
-          } catch {}
+          try { await navigator.clipboard?.writeText(packet); copied = true; } catch {}
 
           setTimeout(() => {
             submitBtn.disabled = false;
@@ -919,19 +969,14 @@ window.AnshScenes = (() => {
             window.AnshShowcase3D?.updateProps?.({ transmitting: false });
             window.AnshAudio.playUnlock?.();
             status.textContent = copied
-              ? '✓ Packet copied to clipboard — paste via GitHub or Instagram DM.'
+              ? '✓ Packet copied to clipboard — reach out via GitHub or Instagram.'
               : '✓ Packet formatted — reach Ansh via @ansh1ndia below.';
-            if (window.AnshFX?.confetti && !reducedMotion) {
-              window.AnshFX.confetti({ particleCount: 45, spread: 55, origin: { y: 0.7 } });
-            }
             form.reset();
             setTimeout(() => { status.textContent = ''; }, 5500);
-          }, 700);
+          }, 550);
         });
       }
     }
-
-    animateEntrance();
   };
 
   const openScene = id => {
@@ -956,7 +1001,7 @@ window.AnshScenes = (() => {
       sceneEl.scrollTop = 0;
       curtain.classList.remove('active');
       sceneBody.querySelector('[data-exit-scene]')?.focus({ preventScroll: true });
-    }, 200);
+    }, 170);
   };
 
   const closeScene = () => {
@@ -972,12 +1017,17 @@ window.AnshScenes = (() => {
       sceneEl.setAttribute('aria-hidden', 'true');
       curtain.classList.remove('active');
       document.getElementById('cityCanvas')?.focus({ preventScroll: true });
-    }, 180);
+    }, 150);
   };
 
   const handleInteractable = obj => {
     if (!obj) return;
     markDiscovered(obj.id);
+    if (obj.kind === 'bench') {
+      window.AnshPlayer.sitOnBench?.(obj);
+      openDialog('PLAZA BENCH // RAIN OVERLOOK', 'Taking a quiet moment by the canal. Move any direction to stand back up.');
+      return;
+    }
     if (obj.kind === 'vending') {
       const drinks = DATA.vendingDrinks || [];
       const drink = drinks[Math.floor(Math.random() * drinks.length)] || 'CYBER DRINK // Crisp & Cold.';
@@ -1015,6 +1065,10 @@ window.AnshScenes = (() => {
     setReducedMotion: val => {
       reducedMotion = Boolean(val);
       window.AnshShowcase3D?.updateProps?.({ reducedMotion });
+    },
+    setEcoMode: val => {
+      ecoMode = Boolean(val);
+      window.AnshShowcase3D?.updateProps?.({ eco: ecoMode });
     }
   };
 })();

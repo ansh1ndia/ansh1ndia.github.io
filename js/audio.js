@@ -174,6 +174,13 @@ window.AnshAudio = (() => {
     syncBedsGain();
   };
 
+  const setMasterVolume = val => {
+    const v = Math.max(0, Math.min(1, Number(val)));
+    if (masterGain && ctx) {
+      masterGain.gain.setTargetAtTime(v, ctx.currentTime, 0.05);
+    }
+  };
+
   const toggle = () => setEnabled(!enabled);
   const isEnabled = () => enabled;
   const hadSessionPref = () => savedPref;
@@ -334,6 +341,7 @@ window.AnshAudio = (() => {
     setRainLevel,
     setAmbienceEnabled,
     setMusicDucking,
+    setMasterVolume,
     playStep,
     playUI,
     playDoor,

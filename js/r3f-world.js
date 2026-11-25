@@ -24,6 +24,69 @@ const ACCENT_HEX = {
   emerald: '#10b981'
 };
 
+const MOOD_PRESETS = {
+  midnight: {
+    bg: '#06080f',
+    fog: '#070a12',
+    fogDensity: 0.022,
+    ambientColor: '#94a3b8',
+    hemiSky: '#38bdf8',
+    hemiGround: '#1e1b2e',
+    keyColor: '#e2e8f0',
+    rimColor: '#f472b6',
+    waterPrimary: '#ef4444',
+    waterSecondary: '#38bdf8',
+    waterAmber: '#f59e0b',
+    waterBase: '#040a16',
+    moonTint: '#dbeafe'
+  },
+  bloodmoon: {
+    bg: '#110408',
+    fog: '#17050b',
+    fogDensity: 0.024,
+    ambientColor: '#fca5a5',
+    hemiSky: '#ef4444',
+    hemiGround: '#1c080f',
+    keyColor: '#fee2e2',
+    rimColor: '#ef4444',
+    waterPrimary: '#ef4444',
+    waterSecondary: '#fb923c',
+    waterAmber: '#f59e0b',
+    waterBase: '#120307',
+    moonTint: '#fecaca'
+  },
+  sakura: {
+    bg: '#100714',
+    fog: '#15091b',
+    fogDensity: 0.021,
+    ambientColor: '#f5d0fe',
+    hemiSky: '#f472b6',
+    hemiGround: '#24102b',
+    keyColor: '#fdf2f8',
+    rimColor: '#ec4899',
+    waterPrimary: '#f472b6',
+    waterSecondary: '#a855f7',
+    waterAmber: '#fda4af',
+    waterBase: '#100617',
+    moonTint: '#fce7f3'
+  },
+  matrix: {
+    bg: '#030d08',
+    fog: '#04120b',
+    fogDensity: 0.023,
+    ambientColor: '#86efac',
+    hemiSky: '#10b981',
+    hemiGround: '#051a10',
+    keyColor: '#d1fae5',
+    rimColor: '#22c55e',
+    waterPrimary: '#10b981',
+    waterSecondary: '#34d399',
+    waterAmber: '#84cc16',
+    waterBase: '#020d07',
+    moonTint: '#bbf7d0'
+  }
+};
+
 const DIR_YAW = {
   down: 0,
   right: Math.PI / 2,
@@ -206,6 +269,56 @@ function makeSignTexture(line1, line2, accentHex) {
   return tex;
 }
 
+function makeCrescentMoonTexture() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 512;
+  canvas.height = 512;
+  const ctx = canvas.getContext('2d');
+
+  /* Soft atmospheric night halo */
+  const halo = ctx.createRadialGradient(256, 256, 36, 256, 256, 245);
+  halo.addColorStop(0, 'rgba(224,242,254,0.45)');
+  halo.addColorStop(0.32, 'rgba(56,189,248,0.18)');
+  halo.addColorStop(0.65, 'rgba(244,114,182,0.06)');
+  halo.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = halo;
+  ctx.fillRect(0, 0, 512, 512);
+
+  /* Crisp cyberpunk crescent disc on offscreen buffer */
+  const moonCanvas = document.createElement('canvas');
+  moonCanvas.width = 512;
+  moonCanvas.height = 512;
+  const mctx = moonCanvas.getContext('2d');
+
+  const discGrad = mctx.createLinearGradient(160, 160, 340, 340);
+  discGrad.addColorStop(0, '#f8fafc');
+  discGrad.addColorStop(0.55, '#bae6fd');
+  discGrad.addColorStop(1, '#7dd3fc');
+  mctx.fillStyle = discGrad;
+  mctx.beginPath();
+  mctx.arc(256, 256, 92, 0, Math.PI * 2);
+  mctx.fill();
+
+  mctx.globalCompositeOperation = 'destination-out';
+  mctx.beginPath();
+  mctx.arc(296, 232, 78, 0, Math.PI * 2);
+  mctx.fill();
+  mctx.globalCompositeOperation = 'source-over';
+
+  /* Subtle dark-side cyber rim */
+  ctx.strokeStyle = 'rgba(186,230,253,0.16)';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(256, 256, 92, 0, Math.PI * 2);
+  ctx.stroke();
+
+  ctx.drawImage(moonCanvas, 0, 0);
+
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
 function makeParticleTexture(isRain) {
   const canvas = document.createElement('canvas');
   canvas.width = 32;
@@ -224,6 +337,25 @@ function makeParticleTexture(isRain) {
     ctx.ellipse(16, 16, 11, 6, Math.PI / 5, 0, Math.PI * 2);
     ctx.fill();
   }
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
+function makeLightPoolTexture() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 128;
+  canvas.height = 128;
+  const ctx = canvas.getContext('2d');
+
+  const grad = ctx.createRadialGradient(64, 64, 2, 64, 64, 62);
+  grad.addColorStop(0, 'rgba(255,255,255,0.62)');
+  grad.addColorStop(0.35, 'rgba(255,255,255,0.24)');
+  grad.addColorStop(0.7, 'rgba(255,255,255,0.06)');
+  grad.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, 128, 128);
+
   const tex = new THREE.CanvasTexture(canvas);
   tex.colorSpace = THREE.SRGBColorSpace;
   return tex;
@@ -358,8 +490,7 @@ function InstancedTown({ world, bloom }) {
     const puddleGeo = new THREE.CylinderGeometry(0.36, 0.39, 0.02, 16);
 
     const pineTrunkGeo = new THREE.CylinderGeometry(0.11, 0.16, 0.7, 7);
-    const pineConeLowGeo = new THREE.ConeGeometry(0.56, 0.95, 7);
-    const pineConeHighGeo = new THREE.ConeGeometry(0.41, 0.78, 7);
+    const pineCrownGeo = new THREE.IcosahedronGeometry(0.55, 1);
 
     const lampPoleGeo = new THREE.CylinderGeometry(0.06, 0.09, 1.9, 8);
     const lampCapGeo = new THREE.BoxGeometry(0.34, 0.1, 0.34);
@@ -368,43 +499,38 @@ function InstancedTown({ world, bloom }) {
     const fencePostGeo = new THREE.BoxGeometry(0.14, 0.56, 0.14);
     const fenceRailGeo = new THREE.BoxGeometry(1.0, 0.09, 0.08);
 
-    const grassMat = new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 0.95, metalness: 0.05 });
-    const flagMat = new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 0.48, metalness: 0.25 });
-    const roadMat = new THREE.MeshStandardMaterial({ color: '#0d1017', roughness: 0.3, metalness: 0.42 });
-    const stripeMat = new THREE.MeshStandardMaterial({
+    const grassMat = new THREE.MeshLambertMaterial({ color: '#ffffff' });
+    const flagMat = new THREE.MeshLambertMaterial({ color: '#ffffff' });
+    const roadMat = new THREE.MeshLambertMaterial({ color: '#0d1017' });
+    const stripeMat = new THREE.MeshLambertMaterial({
       color: '#f59e0b',
       emissive: '#b45309',
-      emissiveIntensity: 0.45,
-      roughness: 0.4
+      emissiveIntensity: 0.45
     });
-    const bridgeMat = new THREE.MeshStandardMaterial({ color: '#2b2e40', roughness: 0.55, metalness: 0.28 });
-    const railBlockMat = new THREE.MeshStandardMaterial({ color: '#373b52', roughness: 0.5, metalness: 0.35 });
-    const lanternMat = new THREE.MeshStandardMaterial({
+    const bridgeMat = new THREE.MeshLambertMaterial({ color: '#2b2e40' });
+    const railBlockMat = new THREE.MeshLambertMaterial({ color: '#373b52' });
+    const lanternMat = new THREE.MeshLambertMaterial({
       color: '#ef4444',
       emissive: '#ef4444',
-      emissiveIntensity: 1.5,
-      roughness: 0.25
+      emissiveIntensity: 1.5
     });
-    const puddleMat = new THREE.MeshStandardMaterial({
-      color: '#ffffff',
-      roughness: 0.05,
-      metalness: 0.92
+    const puddleMat = new THREE.MeshLambertMaterial({
+      color: '#ffffff'
     });
-    const pineTrunkMat = new THREE.MeshStandardMaterial({ color: '#261b18', roughness: 0.9 });
-    const pineCrownLowMat = new THREE.MeshStandardMaterial({ color: '#0d2621', roughness: 0.85 });
-    const pineCrownHighMat = new THREE.MeshStandardMaterial({ color: '#194037', roughness: 0.82 });
+    const pineTrunkMat = new THREE.MeshLambertMaterial({ color: '#261b18' });
+    const pineCrownLowMat = new THREE.MeshLambertMaterial({ color: '#0d2621' });
+    const pineCrownHighMat = new THREE.MeshLambertMaterial({ color: '#194037' });
 
-    const lampPoleMat = new THREE.MeshStandardMaterial({ color: '#222534', roughness: 0.4, metalness: 0.7 });
-    const lampCapMat = new THREE.MeshStandardMaterial({ color: '#33384d', roughness: 0.45, metalness: 0.65 });
-    const lampBulbMat = new THREE.MeshStandardMaterial({
+    const lampPoleMat = new THREE.MeshLambertMaterial({ color: '#222534' });
+    const lampCapMat = new THREE.MeshLambertMaterial({ color: '#33384d' });
+    const lampBulbMat = new THREE.MeshLambertMaterial({
       color: '#fef3c7',
       emissive: '#f59e0b',
-      emissiveIntensity: 2.1,
-      roughness: 0.2
+      emissiveIntensity: 2.1
     });
 
-    const fencePostMat = new THREE.MeshStandardMaterial({ color: '#272733', roughness: 0.65, metalness: 0.4 });
-    const fenceRailMat = new THREE.MeshStandardMaterial({ color: '#452b25', roughness: 0.8 });
+    const fencePostMat = new THREE.MeshLambertMaterial({ color: '#272733' });
+    const fenceRailMat = new THREE.MeshLambertMaterial({ color: '#452b25' });
 
     /* Build InstancedMeshes */
     const grassMesh = makeInstanced(grassTileGeo, grassMat, grassCoords.length);
@@ -488,8 +614,8 @@ function InstancedTown({ world, bloom }) {
     });
 
     const pineTrunkMesh = makeInstanced(pineTrunkGeo, pineTrunkMat, pineCoords.length);
-    const pineCrownLowMesh = makeInstanced(pineConeLowGeo, pineCrownLowMat, pineCoords.length);
-    const pineCrownHighMesh = makeInstanced(pineConeHighGeo, pineCrownHighMat, pineCoords.length);
+    const pineCrownLowMesh = makeInstanced(pineCrownGeo, pineCrownLowMat, pineCoords.length);
+    const pineCrownHighMesh = makeInstanced(pineCrownGeo, pineCrownHighMat, pineCoords.length);
     pineCoords.forEach((it, idx) => {
       const hScale = 0.86 + hash2D(it.c, it.r) * 0.34;
       const rotY = hash2D(it.r, it.c) * Math.PI * 2;
@@ -499,11 +625,15 @@ function InstancedTown({ world, bloom }) {
       dummy.updateMatrix();
       pineTrunkMesh.setMatrixAt(idx, dummy.matrix);
 
-      dummy.position.set(it.wx, 0.95 * hScale, it.wz);
+      dummy.position.set(it.wx, 0.94 * hScale, it.wz);
+      dummy.rotation.set(0, rotY, 0);
+      dummy.scale.set(1.04, 0.95 * hScale, 1.04);
       dummy.updateMatrix();
       pineCrownLowMesh.setMatrixAt(idx, dummy.matrix);
 
-      dummy.position.set(it.wx, 1.48 * hScale, it.wz);
+      dummy.position.set(it.wx, 1.44 * hScale, it.wz);
+      dummy.rotation.set(0, rotY + 0.85, 0);
+      dummy.scale.set(0.76, 0.86 * hScale, 0.76);
       dummy.updateMatrix();
       pineCrownHighMesh.setMatrixAt(idx, dummy.matrix);
     });
@@ -570,7 +700,7 @@ function InstancedTown({ world, bloom }) {
       stripeMat,
       disposables: [
         tileGeo, grassTileGeo, stripeGeo, bridgeGeo, railBlockGeo, lanternGeo, puddleGeo,
-        pineTrunkGeo, pineConeLowGeo, pineConeHighGeo,
+        pineTrunkGeo, pineCrownGeo,
         lampPoleGeo, lampCapGeo, lampBulbGeo,
         fencePostGeo, fenceRailGeo,
         grassMat, flagMat, roadMat, stripeMat, bridgeMat, railBlockMat, lanternMat, puddleMat,
@@ -601,120 +731,482 @@ function InstancedTown({ world, bloom }) {
   `;
 }
 
-/* ── Animated Canal Water Strip ('W' rows 11..13) ── */
-function CanalWater({ cols, bloom, reducedMotion }) {
-  const shimmerRef = useRef(null);
+/* ── Distant Cyberpunk Skyline Horizon + Crescent Moon ── */
+function CyberpunkSkyline({ bloom, mood, reducedMotion, effectiveEco }) {
+  const assets = useMemo(() => {
+    const dummy = new THREE.Object3D();
+    const col = new THREE.Color();
 
-  const { waterGeo, waterMat, wallGeo, wallMat, barGeo, barMat, bars } = useMemo(() => {
-    const wGeo = new THREE.PlaneGeometry(cols - 2, 3.0);
-    const wMat = new THREE.MeshStandardMaterial({
-      color: '#040a16',
-      roughness: 0.08,
-      metalness: 0.9
-    });
-
-    const bGeo = new THREE.BoxGeometry(cols - 2, 0.24, 0.14);
-    const bMat = new THREE.MeshStandardMaterial({ color: '#1b1f2e', roughness: 0.7 });
-
-    const sGeo = new THREE.BoxGeometry(0.85, 0.02, 0.11);
-    const sMat = new THREE.MeshBasicMaterial({
-      color: '#ffffff',
-      transparent: true,
-      opacity: 0.78
-    });
-
-    const list = [];
-    for (let i = 0; i < 48; i++) {
-      const wx = -19.2 + (i / 47) * 38.4;
-      const wz = -1.6 + ((i * 7) % 5) * 0.55;
-      const len = 0.7 + (i % 3) * 0.45;
-      const speed = 0.9 + (i % 4) * 0.35;
-      const phase = i * 0.73;
-      const hex = wx < -3.8 ? '#ef4444' : wx > 3.8 ? '#38bdf8' : '#f59e0b';
-      list.push({ wx, wz, len, speed, phase, color: new THREE.Color(hex) });
+    const towers = [];
+    /* 16 north horizon towers (z: -34..-18) */
+    for (let i = 0; i < 16; i++) {
+      const t = i / 15;
+      const x = -33 + t * 66 + (hash2D(i, 3.1) - 0.5) * 2.4;
+      const z = -18.5 - hash2D(i, 7.4) * 15.0;
+      const w = 2.6 + hash2D(i, 11.2) * 2.2;
+      const d = 2.6 + hash2D(i, 13.8) * 2.2;
+      const h = 11 + hash2D(i, 17.5) * 16.5;
+      towers.push({ x, z, w, d, h, side: 'north', idx: i });
+    }
+    /* 6 west horizon towers (x: -34..-26) */
+    for (let i = 0; i < 6; i++) {
+      const t = i / 5;
+      const x = -26.5 - hash2D(i + 20, 4.3) * 7.2;
+      const z = -18 + t * 29 + (hash2D(i + 20, 8.1) - 0.5) * 1.8;
+      const w = 2.6 + hash2D(i + 20, 12.6) * 2.0;
+      const d = 2.6 + hash2D(i + 20, 15.4) * 2.0;
+      const h = 10 + hash2D(i + 20, 19.2) * 14.5;
+      towers.push({ x, z, w, d, h, side: 'west', idx: 16 + i });
+    }
+    /* 6 east horizon towers (x: 26..34) */
+    for (let i = 0; i < 6; i++) {
+      const t = i / 5;
+      const x = 26.5 + hash2D(i + 40, 5.7) * 7.2;
+      const z = -18 + t * 29 + (hash2D(i + 40, 9.3) - 0.5) * 1.8;
+      const w = 2.6 + hash2D(i + 40, 14.1) * 2.0;
+      const d = 2.6 + hash2D(i + 40, 16.9) * 2.0;
+      const h = 10 + hash2D(i + 40, 21.7) * 14.5;
+      towers.push({ x, z, w, d, h, side: 'east', idx: 22 + i });
     }
 
+    const boxGeo = new THREE.BoxGeometry(1, 1, 1);
+    const ribGeo = new THREE.BoxGeometry(0.11, 1, 0.11);
+    const spireGeo = new THREE.BoxGeometry(0.08, 1, 0.08);
+    const beaconGeo = new THREE.BoxGeometry(0.28, 0.28, 0.28);
+
+    const towerMat = new THREE.MeshLambertMaterial({ color: '#ffffff' });
+    const ribMat = new THREE.MeshBasicMaterial({ color: '#ffffff' });
+    const spireMat = new THREE.MeshLambertMaterial({ color: '#1e293b' });
+    const beaconMat = new THREE.MeshBasicMaterial({ color: '#ffffff', fog: false });
+
+    const towerMesh = new THREE.InstancedMesh(boxGeo, towerMat, towers.length);
+    const ribMesh = new THREE.InstancedMesh(ribGeo, ribMat, towers.length * 2);
+    towerMesh.frustumCulled = false;
+    ribMesh.frustumCulled = false;
+
+    const towerShades = ['#070a12', '#0a0e1a', '#0c111e', '#080c17'];
+    const ribPalette = ['#ef4444', '#38bdf8', '#f59e0b', '#f472b6'];
+
+    towers.forEach((tw, i) => {
+      dummy.position.set(tw.x, tw.h * 0.5 - 0.5, tw.z);
+      dummy.rotation.set(0, 0, 0);
+      dummy.scale.set(tw.w, tw.h, tw.d);
+      dummy.updateMatrix();
+      towerMesh.setMatrixAt(i, dummy.matrix);
+      col.set(towerShades[i % towerShades.length]);
+      towerMesh.setColorAt(i, col);
+
+      /* Two vertical neon accent ribs on the town-facing facade */
+      const ribH = tw.h * (0.72 + hash2D(i, 29.3) * 0.2);
+      const ribY = ribH * 0.5 - 0.2;
+      const ribHex = ribPalette[i % ribPalette.length];
+      col.set(ribHex);
+
+      for (let r = 0; r < 2; r++) {
+        const offset = r === 0 ? -0.32 : 0.32;
+        if (tw.side === 'north') {
+          dummy.position.set(tw.x + tw.w * offset, ribY, tw.z + tw.d * 0.5 + 0.04);
+        } else if (tw.side === 'west') {
+          dummy.position.set(tw.x + tw.w * 0.5 + 0.04, ribY, tw.z + tw.d * offset);
+        } else {
+          dummy.position.set(tw.x - tw.w * 0.5 - 0.04, ribY, tw.z + tw.d * offset);
+        }
+        dummy.rotation.set(0, 0, 0);
+        dummy.scale.set(1, ribH, 1);
+        dummy.updateMatrix();
+        ribMesh.setMatrixAt(i * 2 + r, dummy.matrix);
+        ribMesh.setColorAt(i * 2 + r, col);
+      }
+    });
+
+    towerMesh.instanceMatrix.needsUpdate = true;
+    if (towerMesh.instanceColor) towerMesh.instanceColor.needsUpdate = true;
+    ribMesh.instanceMatrix.needsUpdate = true;
+    if (ribMesh.instanceColor) ribMesh.instanceColor.needsUpdate = true;
+
+    /* Highest spires get antenna masts + blinking red aviation beacons */
+    const spireTowers = [...towers].sort((a, b) => b.h - a.h).slice(0, 12);
+    const spireMesh = new THREE.InstancedMesh(spireGeo, spireMat, spireTowers.length);
+    const beaconMesh = new THREE.InstancedMesh(beaconGeo, beaconMat, spireTowers.length);
+    spireMesh.frustumCulled = false;
+    beaconMesh.frustumCulled = false;
+
+    const beaconData = spireTowers.map((tw, i) => {
+      const spireH = 1.8 + hash2D(tw.idx, 41.7) * 1.4;
+      const topY = tw.h - 0.5;
+      dummy.position.set(tw.x, topY + spireH * 0.5, tw.z);
+      dummy.rotation.set(0, 0, 0);
+      dummy.scale.set(1, spireH, 1);
+      dummy.updateMatrix();
+      spireMesh.setMatrixAt(i, dummy.matrix);
+
+      const by = topY + spireH + 0.14;
+      dummy.position.set(tw.x, by, tw.z);
+      dummy.scale.set(1, 1, 1);
+      dummy.updateMatrix();
+      beaconMesh.setMatrixAt(i, dummy.matrix);
+      col.set('#ef4444');
+      beaconMesh.setColorAt(i, col);
+
+      return { phase: i * 1.13 };
+    });
+
+    spireMesh.instanceMatrix.needsUpdate = true;
+    beaconMesh.instanceMatrix.needsUpdate = true;
+    if (beaconMesh.instanceColor) beaconMesh.instanceColor.needsUpdate = true;
+
+    const moonTex = makeCrescentMoonTexture();
+    const moonMat = new THREE.SpriteMaterial({
+      map: moonTex,
+      color: '#dbeafe',
+      transparent: true,
+      opacity: 0.94,
+      fog: false,
+      depthWrite: false
+    });
+
     return {
-      waterGeo: wGeo,
-      waterMat: wMat,
-      wallGeo: bGeo,
-      wallMat: bMat,
-      barGeo: sGeo,
-      barMat: sMat,
-      bars: list
+      towerMesh,
+      ribMesh,
+      spireMesh,
+      beaconMesh,
+      beaconData,
+      ribMat,
+      moonTex,
+      moonMat,
+      tempColor: new THREE.Color(),
+      disposables: [
+        boxGeo, ribGeo, spireGeo, beaconGeo,
+        towerMat, ribMat, spireMat, beaconMat,
+        moonTex, moonMat
+      ]
     };
-  }, [cols]);
-
-  const shimmerMesh = useMemo(() => {
-    const mesh = new THREE.InstancedMesh(barGeo, barMat, bars.length);
-    mesh.frustumCulled = false;
-    bars.forEach((b, i) => mesh.setColorAt(i, b.color));
-    if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
-    return mesh;
-  }, [barGeo, barMat, bars]);
-
-  const dummy = useMemo(() => new THREE.Object3D(), []);
+  }, []);
 
   useEffect(() => {
-    barMat.opacity = bloom ? 0.78 : 0.35;
-  }, [bloom, barMat]);
+    assets.ribMat.color.set(bloom ? '#ffffff' : '#64748b');
+  }, [bloom, assets]);
+
+  useEffect(() => {
+    assets.moonMat.color.set(mood.moonTint || '#dbeafe');
+  }, [mood, assets]);
 
   useEffect(() => {
     return () => {
-      waterGeo.dispose();
-      waterMat.dispose();
-      wallGeo.dispose();
-      wallMat.dispose();
-      barGeo.dispose();
-      barMat.dispose();
+      assets.disposables.forEach(d => d.dispose());
     };
-  }, [waterGeo, waterMat, wallGeo, wallMat, barGeo, barMat]);
+  }, [assets]);
 
   useFrame(({ clock }) => {
-    const t = reducedMotion ? 0 : clock.getElapsedTime();
-    for (let i = 0; i < bars.length; i++) {
-      const b = bars[i];
-      const sway = Math.sin(t * b.speed + b.phase) * 0.42;
-      const pulse = 0.7 + 0.3 * Math.sin(t * 2.2 + b.phase);
-      dummy.position.set(b.wx + sway, -0.1, b.wz);
-      dummy.rotation.set(0, 0, 0);
-      dummy.scale.set(b.len * pulse, 1, 1);
-      dummy.updateMatrix();
-      shimmerMesh.setMatrixAt(i, dummy.matrix);
+    if (reducedMotion || effectiveEco) return;
+    const t = clock.getElapsedTime();
+    const { beaconMesh, beaconData, tempColor } = assets;
+    const mult = bloom ? 1.0 : 0.45;
+    for (let i = 0; i < beaconData.length; i++) {
+      const cycle = (t * 0.9 + beaconData[i].phase) % 2.4;
+      const on = (cycle < 0.35 || (cycle > 0.55 && cycle < 0.8)) ? 1.0 : 0.16;
+      tempColor.setRGB(on * mult, on * 0.08 * mult, on * 0.09 * mult);
+      beaconMesh.setColorAt(i, tempColor);
     }
-    shimmerMesh.instanceMatrix.needsUpdate = true;
+    if (beaconMesh.instanceColor) beaconMesh.instanceColor.needsUpdate = true;
   });
 
   return html`
     <group>
+      <primitive object=${assets.towerMesh} />
+      <primitive object=${assets.ribMesh} />
+      <primitive object=${assets.spireMesh} />
+      <primitive object=${assets.beaconMesh} />
+      <sprite material=${assets.moonMat} position=${[-25, 19, -46]} scale=${[15, 15, 1]} />
+    </group>
+  `;
+}
+
+/* ── Animated Canal Water Shader ('W' rows 11..13) + 3 Neon Koi + Patrol Drone ── */
+const WATER_VERTEX_SHADER = /* glsl */ `
+  varying vec2 vUv;
+  varying vec3 vWorldPos;
+  void main() {
+    vUv = uv;
+    vec4 wp = modelMatrix * vec4(position, 1.0);
+    vWorldPos = wp.xyz;
+    gl_Position = projectionMatrix * viewMatrix * wp;
+  }
+`;
+
+const WATER_FRAGMENT_SHADER = /* glsl */ `
+  uniform float uTime;
+  uniform vec3 uPrimaryColor;
+  uniform vec3 uSecondaryColor;
+  uniform vec3 uAmberColor;
+  uniform vec3 uBaseColor;
+  uniform float uBloom;
+
+  varying vec2 vUv;
+  varying vec3 vWorldPos;
+
+  void main() {
+    float x = vWorldPos.x;
+    float flow = x * 1.4 - uTime * 1.45;
+    float wave1 = sin(flow + sin(vUv.y * 14.0 + uTime * 1.7) * 0.9);
+    float wave2 = sin(x * 2.9 + uTime * 2.15 + vUv.y * 20.0);
+    float ripple = smoothstep(0.05, 0.95, (wave1 * 0.55 + wave2 * 0.45) * 0.5 + 0.5);
+
+    /* District neon reflection bands: West (Crimson/Primary), Bridge (Amber), East (Cyan/Secondary) */
+    float westMask = 1.0 - smoothstep(-10.0, -2.5, x);
+    float eastMask = smoothstep(0.0, 8.5, x);
+    float centerMask = clamp(1.0 - westMask - eastMask, 0.0, 1.0);
+
+    vec3 neonBand = uPrimaryColor * westMask + uAmberColor * centerMask + uSecondaryColor * eastMask;
+
+    /* Horizontal streaky neon reflection ribbons */
+    float streak1 = smoothstep(0.45, 0.98, sin(vUv.y * 26.0 + wave1 * 1.35 + uTime * 1.3) * 0.5 + 0.5);
+    float streak2 = smoothstep(0.55, 0.99, sin(x * 0.85 - uTime * 0.9 + vUv.y * 12.0) * 0.5 + 0.5);
+    float reflectionStrength = (0.22 + 0.48 * ripple) * (0.35 + 0.65 * streak1) * (0.65 + 0.35 * streak2);
+
+    /* Specular rain shimmer micro-glints */
+    float r1 = sin(x * 11.5 + uTime * 5.2) * cos(vWorldPos.z * 15.0 - uTime * 4.4);
+    float r2 = sin(x * 19.0 - uTime * 6.4 + 1.3) * sin(vWorldPos.z * 21.0 + uTime * 5.6);
+    float rainSparkle = pow(max(0.0, r1 * 0.5 + r2 * 0.5), 5.0);
+
+    /* Subtle dark margin near canal stone walls */
+    float bankEdge = smoothstep(0.0, 0.13, vUv.y) * smoothstep(1.0, 0.87, vUv.y);
+
+    vec3 col = uBaseColor;
+    col += neonBand * reflectionStrength * (0.52 + 0.48 * uBloom) * bankEdge;
+    col += mix(vec3(0.75, 0.9, 1.0), neonBand, 0.4) * rainSparkle * (0.55 + 0.45 * uBloom) * bankEdge;
+
+    gl_FragColor = vec4(col, 0.86);
+  }
+`;
+
+function CanalWater({ cols, bloom, mood, reducedMotion, effectiveEco }) {
+  const koiRefs = useRef([]);
+  const koiTailRefs = useRef([]);
+  const droneRef = useRef(null);
+  const rotorRefs = useRef([]);
+
+  const res = useMemo(() => {
+    const waterGeo = new THREE.PlaneGeometry(cols - 2, 3.0, 48, 4);
+    const waterMat = new THREE.ShaderMaterial({
+      vertexShader: WATER_VERTEX_SHADER,
+      fragmentShader: WATER_FRAGMENT_SHADER,
+      transparent: true,
+      uniforms: {
+        uTime: { value: 0 },
+        uPrimaryColor: { value: new THREE.Color(mood.waterPrimary) },
+        uSecondaryColor: { value: new THREE.Color(mood.waterSecondary) },
+        uAmberColor: { value: new THREE.Color(mood.waterAmber) },
+        uBaseColor: { value: new THREE.Color(mood.waterBase) },
+        uBloom: { value: bloom ? 1.0 : 0.45 }
+      }
+    });
+
+    const wallGeo = new THREE.BoxGeometry(cols - 2, 0.24, 0.14);
+    const wallMat = new THREE.MeshLambertMaterial({ color: '#1b1f2e' });
+
+    /* Shared Neon Koi Geometries & Materials */
+    const koiBodyGeo = new THREE.SphereGeometry(0.11, 10, 8);
+    const koiTailGeo = new THREE.ConeGeometry(0.1, 0.24, 4);
+    const koiFinGeo = new THREE.BoxGeometry(0.19, 0.014, 0.08);
+    const koiMats = [
+      new THREE.MeshLambertMaterial({
+        color: '#fb923c', emissive: '#ef4444', emissiveIntensity: 1.85
+      }),
+      new THREE.MeshLambertMaterial({
+        color: '#7dd3fc', emissive: '#38bdf8', emissiveIntensity: 1.85
+      }),
+      new THREE.MeshLambertMaterial({
+        color: '#f9a8d4', emissive: '#f472b6', emissiveIntensity: 1.85
+      })
+    ];
+    const koiPaths = [
+      { cx: -11.4, rx: 6.2, rz: 0.72, speed: 0.42, phase: 0.0 },
+      { cx: 10.6, rx: 6.5, rz: 0.72, speed: 0.37, phase: 2.15 },
+      { cx: -0.5, rx: 16.0, rz: 0.64, speed: 0.22, phase: 4.3 }
+    ];
+
+    /* Autonomous Patrol Drone Geometries & Materials */
+    const droneBodyGeo = new THREE.BoxGeometry(0.42, 0.13, 0.5);
+    const droneArmGeo = new THREE.BoxGeometry(0.56, 0.035, 0.045);
+    const rotorRingGeo = new THREE.TorusGeometry(0.15, 0.018, 8, 18);
+    const rotorBladeGeo = new THREE.BoxGeometry(0.24, 0.012, 0.035);
+    const droneEyeGeo = new THREE.SphereGeometry(0.068, 10, 8);
+    const scanConeGeo = new THREE.ConeGeometry(0.62, 2.8, 16, 1, true);
+
+    const droneHullMat = new THREE.MeshLambertMaterial({ color: '#111827' });
+    const droneCyanMat = new THREE.MeshLambertMaterial({
+      color: '#bae6fd', emissive: '#38bdf8', emissiveIntensity: 2.0
+    });
+    const scanConeMat = new THREE.MeshBasicMaterial({
+      color: '#38bdf8',
+      transparent: true,
+      opacity: 0.045,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending
+    });
+
+    return {
+      waterGeo, waterMat, wallGeo, wallMat,
+      koiBodyGeo, koiTailGeo, koiFinGeo, koiMats, koiPaths,
+      droneBodyGeo, droneArmGeo, rotorRingGeo, rotorBladeGeo, droneEyeGeo, scanConeGeo,
+      droneHullMat, droneCyanMat, scanConeMat
+    };
+  }, [cols]);
+
+  useEffect(() => {
+    const u = res.waterMat.uniforms;
+    u.uPrimaryColor.value.set(mood.waterPrimary);
+    u.uSecondaryColor.value.set(mood.waterSecondary);
+    u.uAmberColor.value.set(mood.waterAmber);
+    u.uBaseColor.value.set(mood.waterBase);
+    u.uBloom.value = bloom ? 1.0 : 0.45;
+    res.scanConeMat.opacity = bloom ? 0.045 : 0.025;
+    res.droneCyanMat.emissiveIntensity = bloom ? 2.0 : 0.8;
+    res.koiMats.forEach(m => { m.emissiveIntensity = bloom ? 1.85 : 0.85; });
+  }, [mood, bloom, res]);
+
+  useEffect(() => {
+    return () => {
+      res.waterGeo.dispose();
+      res.waterMat.dispose();
+      res.wallGeo.dispose();
+      res.wallMat.dispose();
+      res.koiBodyGeo.dispose();
+      res.koiTailGeo.dispose();
+      res.koiFinGeo.dispose();
+      res.koiMats.forEach(m => m.dispose());
+      res.droneBodyGeo.dispose();
+      res.droneArmGeo.dispose();
+      res.rotorRingGeo.dispose();
+      res.rotorBladeGeo.dispose();
+      res.droneEyeGeo.dispose();
+      res.scanConeGeo.dispose();
+      res.droneHullMat.dispose();
+      res.droneCyanMat.dispose();
+      res.scanConeMat.dispose();
+    };
+  }, [res]);
+
+  useFrame(({ clock }) => {
+    const t = reducedMotion ? 0 : clock.getElapsedTime();
+    res.waterMat.uniforms.uTime.value = t;
+
+    /* Swim 3 glowing Neon Koi smoothly along curved canal paths */
+    for (let i = 0; i < res.koiPaths.length; i++) {
+      const koi = koiRefs.current[i];
+      if (!koi) continue;
+      const p = res.koiPaths[i];
+      const a = t * p.speed + p.phase;
+      const x = p.cx + Math.sin(a) * p.rx;
+      const z = -0.5 + Math.sin(2 * a) * p.rz;
+      const dx = Math.cos(a) * p.rx * p.speed;
+      const dz = 2 * Math.cos(2 * a) * p.rz * p.speed;
+      koi.position.set(x, -0.15 + Math.sin(t * 2.4 + i) * 0.015, z);
+      koi.rotation.y = Math.atan2(dx, dz);
+
+      const tail = koiTailRefs.current[i];
+      if (tail) {
+        tail.rotation.y = Math.sin(t * 7.8 + i * 2.1) * 0.42;
+      }
+    }
+
+    /* Autonomous Patrol Drone hovering gently above central canal bridge (skipped in Eco) */
+    if (!reducedMotion && !effectiveEco) {
+      if (droneRef.current) {
+        const dx = Math.sin(t * 0.65) * 1.65;
+        const dz = Math.cos(t * 0.85) * 0.95;
+        const dy = Math.sin(t * 2.2) * 0.14;
+        droneRef.current.position.set(-1.5 + dx, 3.25 + dy, -0.5 + dz);
+        droneRef.current.rotation.z = -Math.cos(t * 0.65) * 0.11;
+        droneRef.current.rotation.x = -Math.sin(t * 0.85) * 0.09;
+        droneRef.current.rotation.y = Math.sin(t * 0.4) * 0.35;
+      }
+      for (let i = 0; i < 4; i++) {
+        const rot = rotorRefs.current[i];
+        if (rot) rot.rotation.y = t * (i % 2 === 0 ? 18 : -18);
+      }
+    }
+  });
+
+  const rotorOffsets = [
+    [-0.36, 0.04, -0.36],
+    [0.36, 0.04, -0.36],
+    [-0.36, 0.04, 0.36],
+    [0.36, 0.04, 0.36]
+  ];
+
+  return html`
+    <group>
       <mesh
-        geometry=${waterGeo}
-        material=${waterMat}
+        geometry=${res.waterGeo}
+        material=${res.waterMat}
         position=${[0, -0.13, -0.5]}
         rotation=${[-Math.PI / 2, 0, 0]}
       />
-      <mesh geometry=${wallGeo} material=${wallMat} position=${[0, -0.05, -2.02]} />
-      <mesh geometry=${wallGeo} material=${wallMat} position=${[0, -0.05, 1.02]} />
-      <primitive ref=${shimmerRef} object=${shimmerMesh} />
+      <mesh geometry=${res.wallGeo} material=${res.wallMat} position=${[0, -0.05, -2.02]} />
+      <mesh geometry=${res.wallGeo} material=${res.wallMat} position=${[0, -0.05, 1.02]} />
+
+      {/* 3 Glowing 3D Neon Koi */}
+      ${res.koiPaths.map((p, idx) => html`
+        <group
+          key=${`koi_${idx}`}
+          ref=${el => { koiRefs.current[idx] = el; }}
+          position=${[p.cx, -0.15, -0.5]}
+        >
+          <mesh geometry=${res.koiBodyGeo} material=${res.koiMats[idx]} scale=${[0.85, 0.65, 2.2]} />
+          <mesh geometry=${res.koiFinGeo} material=${res.koiMats[idx]} position=${[0, 0, 0.04]} />
+          <group ref=${el => { koiTailRefs.current[idx] = el; }} position=${[0, 0, -0.22]}>
+            <mesh
+              geometry=${res.koiTailGeo}
+              material=${res.koiMats[idx]}
+              position=${[0, 0, -0.1]}
+              rotation=${[Math.PI / 2, 0, 0]}
+              scale=${[0.35, 1, 1.3]}
+            />
+          </group>
+        </group>
+      `)}
+
+      {/* Autonomous 3D Patrol Drone over Central Canal Bridge */}
+      <group ref=${droneRef} position=${[-1.5, 3.25, -0.5]}>
+        <mesh geometry=${res.droneBodyGeo} material=${res.droneHullMat} />
+        <mesh geometry=${res.droneArmGeo} material=${res.droneHullMat} rotation=${[0, Math.PI / 4, 0]} scale=${[1.8, 1, 1]} />
+        <mesh geometry=${res.droneArmGeo} material=${res.droneHullMat} rotation=${[0, -Math.PI / 4, 0]} scale=${[1.8, 1, 1]} />
+        <mesh geometry=${res.droneEyeGeo} material=${res.droneCyanMat} position=${[0, -0.02, 0.24]} />
+
+        ${rotorOffsets.map((pos, idx) => html`
+          <group key=${`rot_${idx}`} position=${pos}>
+            <mesh geometry=${res.rotorRingGeo} material=${res.droneCyanMat} rotation=${[Math.PI / 2, 0, 0]} />
+            <mesh
+              ref=${el => { rotorRefs.current[idx] = el; }}
+              geometry=${res.rotorBladeGeo}
+              material=${res.droneHullMat}
+            />
+          </group>
+        `)}
+
+        <mesh geometry=${res.scanConeGeo} material=${res.scanConeMat} position=${[0, -1.62, 0]} />
+      </group>
     </group>
   `;
 }
 
 /* ── Swaying Cherry Blossom Trees ('K') ── */
-function SakuraTrees({ sakuras, cols, rows, reducedMotion }) {
+function SakuraTrees({ sakuras, cols, rows, reducedMotion, effectiveEco }) {
   const canopyRefs = useRef([]);
 
   const shared = useMemo(() => {
     const trunkGeo = new THREE.CylinderGeometry(0.12, 0.19, 0.9, 7);
-    const lobeGeo = new THREE.SphereGeometry(0.46, 10, 8);
-    const trunkMat = new THREE.MeshStandardMaterial({ color: '#331e1b', roughness: 0.9 });
-    const matDark = new THREE.MeshStandardMaterial({ color: '#9d174d', roughness: 0.78 });
-    const matMid = new THREE.MeshStandardMaterial({ color: '#ec4899', roughness: 0.72 });
-    const matLight = new THREE.MeshStandardMaterial({
+    const lobeGeo = new THREE.IcosahedronGeometry(0.55, 1);
+    const trunkMat = new THREE.MeshLambertMaterial({ color: '#331e1b' });
+    const matDark = new THREE.MeshLambertMaterial({ color: '#9d174d' });
+    const matMid = new THREE.MeshLambertMaterial({ color: '#ec4899' });
+    const matLight = new THREE.MeshLambertMaterial({
       color: '#fbcfe8',
       emissive: '#be185d',
-      emissiveIntensity: 0.16,
-      roughness: 0.65
+      emissiveIntensity: 0.16
     });
     return { trunkGeo, lobeGeo, trunkMat, matDark, matMid, matLight };
   }, []);
@@ -731,7 +1223,7 @@ function SakuraTrees({ sakuras, cols, rows, reducedMotion }) {
   }, [shared]);
 
   useFrame(({ clock }) => {
-    if (reducedMotion) return;
+    if (reducedMotion || effectiveEco) return;
     const t = clock.getElapsedTime();
     for (let i = 0; i < sakuras.length; i++) {
       const grp = canopyRefs.current[i];
@@ -751,10 +1243,10 @@ function SakuraTrees({ sakuras, cols, rows, reducedMotion }) {
           <group key=${`${sk.c}_${sk.r}`} position=${[wx, 0, wz]}>
             <mesh geometry=${shared.trunkGeo} material=${shared.trunkMat} position=${[0, 0.45, 0]} />
             <group ref=${el => { canopyRefs.current[idx] = el; }} position=${[0, 1.05, 0]}>
-              <mesh geometry=${shared.lobeGeo} material=${shared.matDark} position=${[-0.25, 0.05, 0.15]} scale=${[1.05, 0.88, 1.05]} />
-              <mesh geometry=${shared.lobeGeo} material=${shared.matMid} position=${[0.24, 0.12, -0.14]} scale=${[0.98, 0.85, 0.98]} />
-              <mesh geometry=${shared.lobeGeo} material=${shared.matMid} position=${[0, 0.34, 0.04]} scale=${[1.1, 0.82, 1.1]} />
-              <mesh geometry=${shared.lobeGeo} material=${shared.matLight} position=${[-0.08, 0.48, -0.06]} scale=${[0.72, 0.62, 0.72]} />
+              <mesh geometry=${shared.lobeGeo} material=${shared.matDark} position=${[-0.25, 0.05, 0.15]} scale=${[0.9, 0.76, 0.9]} />
+              <mesh geometry=${shared.lobeGeo} material=${shared.matMid} position=${[0.24, 0.12, -0.14]} scale=${[0.84, 0.72, 0.84]} />
+              <mesh geometry=${shared.lobeGeo} material=${shared.matMid} position=${[0, 0.34, 0.04]} scale=${[0.94, 0.7, 0.94]} />
+              <mesh geometry=${shared.lobeGeo} material=${shared.matLight} position=${[-0.08, 0.48, -0.06]} scale=${[0.62, 0.54, 0.62]} />
             </group>
           </group>
         `;
@@ -763,8 +1255,110 @@ function SakuraTrees({ sakuras, cols, rows, reducedMotion }) {
   `;
 }
 
+/* ── Pre-baked Radial Light-Pool Floor Decals (Zero pointLights) ── */
+function LightPoolDecals({ world, spans, visible }) {
+  const { MAP, COLS: cols, ROWS: rows } = world;
+
+  const assets = useMemo(() => {
+    const pools = [];
+    const addBuildingPool = (span, color) => {
+      if (!span) return;
+      const d = span.maxR - span.minR + 1;
+      const cx = tileToWorldX((span.minC + span.maxC) * 0.5, cols);
+      const cz = tileToWorldZ((span.minR + span.maxR) * 0.5, rows);
+      pools.push({ x: cx, z: cz + d * 0.5 + 0.85, sx: 6.2, sz: 4.6, color });
+    };
+
+    addBuildingPool(spans.b1, '#ef4444');
+    addBuildingPool(spans.b2, '#38bdf8');
+
+    if (spans.shrine) {
+      pools.push({
+        x: tileToWorldX((spans.shrine.minC + spans.shrine.maxC) * 0.5, cols),
+        z: tileToWorldZ(spans.shrine.minR, rows) + 0.35,
+        sx: 5.2,
+        sz: 5.2,
+        color: '#f472b6'
+      });
+    }
+    if (spans.board) {
+      pools.push({
+        x: tileToWorldX((spans.board.minC + spans.board.maxC) * 0.5, cols),
+        z: tileToWorldZ((spans.board.minR + spans.board.maxR) * 0.5, rows) + 0.55,
+        sx: 4.6,
+        sz: 3.8,
+        color: '#f59e0b'
+      });
+    }
+    if (spans.mail) {
+      pools.push({
+        x: tileToWorldX(spans.mail.minC, cols),
+        z: tileToWorldZ(spans.mail.minR, rows) + 0.25,
+        sx: 3.0,
+        sz: 3.0,
+        color: '#f472b6'
+      });
+    }
+
+    for (let r = 0; r < rows; r++) {
+      const rowStr = MAP[r] || '';
+      for (let c = 0; c < cols; c++) {
+        if (rowStr[c] === 'L') {
+          pools.push({
+            x: tileToWorldX(c, cols),
+            z: tileToWorldZ(r, rows),
+            sx: 3.1,
+            sz: 3.1,
+            color: '#fbbf24'
+          });
+        }
+      }
+    }
+
+    const poolTex = makeLightPoolTexture();
+    const poolGeo = new THREE.PlaneGeometry(1, 1);
+    const poolMat = new THREE.MeshBasicMaterial({
+      map: poolTex,
+      color: '#ffffff',
+      transparent: true,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
+    });
+
+    const mesh = new THREE.InstancedMesh(poolGeo, poolMat, Math.max(1, pools.length));
+    mesh.count = pools.length;
+    mesh.frustumCulled = false;
+
+    const dummy = new THREE.Object3D();
+    const col = new THREE.Color();
+    pools.forEach((p, idx) => {
+      dummy.position.set(p.x, 0.045, p.z);
+      dummy.rotation.set(-Math.PI / 2, 0, 0);
+      dummy.scale.set(p.sx, p.sz, 1);
+      dummy.updateMatrix();
+      mesh.setMatrixAt(idx, dummy.matrix);
+      col.set(p.color);
+      mesh.setColorAt(idx, col);
+    });
+    mesh.instanceMatrix.needsUpdate = true;
+    if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+
+    return { mesh, poolTex, poolGeo, poolMat };
+  }, [MAP, cols, rows, spans]);
+
+  useEffect(() => {
+    return () => {
+      assets.poolGeo.dispose();
+      assets.poolMat.dispose();
+      assets.poolTex.dispose();
+    };
+  }, [assets]);
+
+  return html`<primitive object=${assets.mesh} visible=${visible} />`;
+}
+
 /* ── Detailed Landmarks: GlyphLens, Arcus, Shrine, Intro Board, Mail, Kiosks, Props ── */
-function Landmarks({ world, bloom, reducedMotion }) {
+function Landmarks({ world, bloom, reducedMotion, effectiveEco }) {
   const { MAP, COLS: cols, ROWS: rows, PROPS } = world;
 
   const glyphReticleRef = useRef(null);
@@ -823,41 +1417,41 @@ function Landmarks({ world, bloom, reducedMotion }) {
       signMaterials[s.ch] = new THREE.MeshBasicMaterial({ map: tx });
     });
 
-    const buildingBodyMat = new THREE.MeshStandardMaterial({ color: '#141724', roughness: 0.6, metalness: 0.35 });
-    const roofDeckMat = new THREE.MeshStandardMaterial({ color: '#1d2133', roughness: 0.5, metalness: 0.45 });
-    const darkMetalMat = new THREE.MeshStandardMaterial({ color: '#0b0d14', roughness: 0.4, metalness: 0.7 });
-    const fanBladeMat = new THREE.MeshStandardMaterial({ color: '#94a3b8', roughness: 0.3, metalness: 0.8 });
+    const buildingBodyMat = new THREE.MeshLambertMaterial({ color: '#141724' });
+    const roofDeckMat = new THREE.MeshLambertMaterial({ color: '#1d2133' });
+    const darkMetalMat = new THREE.MeshLambertMaterial({ color: '#0b0d14' });
+    const fanBladeMat = new THREE.MeshLambertMaterial({ color: '#94a3b8' });
 
-    const crimsonNeonMat = new THREE.MeshStandardMaterial({
-      color: '#ef4444', emissive: '#ef4444', emissiveIntensity: 1.9, roughness: 0.2
+    const crimsonNeonMat = new THREE.MeshLambertMaterial({
+      color: '#ef4444', emissive: '#ef4444', emissiveIntensity: 1.9
     });
-    const azureNeonMat = new THREE.MeshStandardMaterial({
-      color: '#38bdf8', emissive: '#38bdf8', emissiveIntensity: 1.9, roughness: 0.2
+    const azureNeonMat = new THREE.MeshLambertMaterial({
+      color: '#38bdf8', emissive: '#38bdf8', emissiveIntensity: 1.9
     });
-    const amberWindowMat = new THREE.MeshStandardMaterial({
-      color: '#fed7aa', emissive: '#fb923c', emissiveIntensity: 1.4, roughness: 0.25
+    const amberWindowMat = new THREE.MeshLambertMaterial({
+      color: '#fed7aa', emissive: '#fb923c', emissiveIntensity: 1.4
     });
-    const cyanWindowMat = new THREE.MeshStandardMaterial({
-      color: '#bae6fd', emissive: '#38bdf8', emissiveIntensity: 1.4, roughness: 0.25
+    const cyanWindowMat = new THREE.MeshLambertMaterial({
+      color: '#bae6fd', emissive: '#38bdf8', emissiveIntensity: 1.4
     });
-    const pinkNeonMat = new THREE.MeshStandardMaterial({
-      color: '#f472b6', emissive: '#f472b6', emissiveIntensity: 1.8, roughness: 0.2
+    const pinkNeonMat = new THREE.MeshLambertMaterial({
+      color: '#f472b6', emissive: '#f472b6', emissiveIntensity: 1.8
     });
-    const amberNeonMat = new THREE.MeshStandardMaterial({
-      color: '#f59e0b', emissive: '#f59e0b', emissiveIntensity: 1.7, roughness: 0.2
+    const amberNeonMat = new THREE.MeshLambertMaterial({
+      color: '#f59e0b', emissive: '#f59e0b', emissiveIntensity: 1.7
     });
 
     const glyphMarqueeMat = new THREE.MeshBasicMaterial({ map: glyphTex });
     const arcusMarqueeMat = new THREE.MeshBasicMaterial({ map: arcusTex });
     const boardFaceMat = new THREE.MeshBasicMaterial({ map: boardTex });
 
-    const toriiVermilionMat = new THREE.MeshStandardMaterial({ color: '#dc2626', roughness: 0.45, metalness: 0.15 });
-    const toriiDarkMat = new THREE.MeshStandardMaterial({ color: '#7f1d1d', roughness: 0.55 });
-    const stoneMat = new THREE.MeshStandardMaterial({ color: '#272a36', roughness: 0.85 });
+    const toriiVermilionMat = new THREE.MeshLambertMaterial({ color: '#dc2626' });
+    const toriiDarkMat = new THREE.MeshLambertMaterial({ color: '#7f1d1d' });
+    const stoneMat = new THREE.MeshLambertMaterial({ color: '#272a36' });
 
-    const woodMat = new THREE.MeshStandardMaterial({ color: '#5c2f22', roughness: 0.8 });
-    const kioskBodyMat = new THREE.MeshStandardMaterial({ color: '#121521', roughness: 0.5, metalness: 0.45 });
-    const vinylMat = new THREE.MeshStandardMaterial({ color: '#0b0d12', roughness: 0.22, metalness: 0.75 });
+    const woodMat = new THREE.MeshLambertMaterial({ color: '#5c2f22' });
+    const kioskBodyMat = new THREE.MeshLambertMaterial({ color: '#121521' });
+    const vinylMat = new THREE.MeshLambertMaterial({ color: '#0b0d12' });
 
     /* Shared Geometries */
     const acBoxGeo = new THREE.BoxGeometry(0.9, 0.34, 0.7);
@@ -942,13 +1536,16 @@ function Landmarks({ world, bloom, reducedMotion }) {
       arcusHaloRef.current.rotation.x = Math.sin(t * 1.1) * 0.35 + 0.4;
       arcusHaloRef.current.position.y = 3.7 + Math.cos(t * 2.0) * 0.15;
     }
-    for (let i = 0; i < fanRefs.current.length; i++) {
-      const f = fanRefs.current[i];
-      if (f) f.rotation.y = t * (i % 2 === 0 ? 5.5 : -5.5);
-    }
     if (mailCrystalRef.current) {
       mailCrystalRef.current.rotation.y = t * 1.6;
       mailCrystalRef.current.position.y = 1.42 + Math.sin(t * 2.6) * 0.08;
+    }
+
+    if (effectiveEco) return;
+
+    for (let i = 0; i < fanRefs.current.length; i++) {
+      const f = fanRefs.current[i];
+      if (f) f.rotation.y = t * (i % 2 === 0 ? 5.5 : -5.5);
     }
     if (filmCubeRef.current) {
       filmCubeRef.current.rotation.y = t * 1.3;
@@ -1040,20 +1637,15 @@ function Landmarks({ world, bloom, reducedMotion }) {
         ${isArcus
           ? html`<mesh ref=${arcusHaloRef} geometry=${res.haloGeo} material=${res.azureNeonMat} position=${[0, 3.7, 0]} />`
           : html`<mesh ref=${glyphReticleRef} geometry=${res.reticleGeo} material=${res.crimsonNeonMat} position=${[0, 3.7, 0]} />`}
-
-        <pointLight
-          color=${isArcus ? '#38bdf8' : '#ef4444'}
-          intensity=${bloom ? 6.5 : 2.5}
-          distance=${9.5}
-          decay=${1.7}
-          position=${[0, 2.2, d * 0.5 + 1.1]}
-        />
       </group>
     `;
   };
 
   return html`
     <group>
+      {/* 0. Soft Pre-baked Radial Light-Pool Floor Decals */}
+      <${LightPoolDecals} world=${world} spans=${spans} visible=${Boolean(bloom && !effectiveEco)} />
+
       {/* 1. GlyphLens Lab & Arcus Studio */}
       ${renderHeroBuilding(spans.b1, spans.d1, false)}
       ${renderHeroBuilding(spans.b2, spans.d2, true)}
@@ -1100,13 +1692,6 @@ function Landmarks({ world, bloom, reducedMotion }) {
               <coneGeometry args=${[0.05, 0.1, 4]} />
             </mesh>
           </group>
-          <pointLight
-            color="#f472b6"
-            intensity=${bloom ? 7.5 : 3.0}
-            distance=${8.5}
-            decay=${1.7}
-            position=${[0, 1.7, 0.8]}
-          />
         </group>
       `}
 
@@ -1277,22 +1862,22 @@ function Characters({ world, reducedMotion }) {
 
   const mats = useMemo(() => ({
     shadow: new THREE.MeshBasicMaterial({ color: '#000000', transparent: true, opacity: 0.45 }),
-    boots: new THREE.MeshStandardMaterial({ color: '#3f3f46', roughness: 0.65 }),
-    shirt: new THREE.MeshStandardMaterial({ color: '#e4e4e7', roughness: 0.65 }),
-    jacket: new THREE.MeshStandardMaterial({ color: '#18181b', roughness: 0.55, metalness: 0.25 }),
-    scarf: new THREE.MeshStandardMaterial({
-      color: '#ef4444', emissive: '#991b1b', emissiveIntensity: 0.35, roughness: 0.5
+    boots: new THREE.MeshLambertMaterial({ color: '#3f3f46' }),
+    shirt: new THREE.MeshLambertMaterial({ color: '#e4e4e7' }),
+    jacket: new THREE.MeshLambertMaterial({ color: '#18181b' }),
+    scarf: new THREE.MeshLambertMaterial({
+      color: '#ef4444', emissive: '#991b1b', emissiveIntensity: 0.35
     }),
-    face: new THREE.MeshStandardMaterial({ color: '#f4f4f5', roughness: 0.5 }),
-    visor: new THREE.MeshStandardMaterial({
-      color: '#09090b', emissive: '#38bdf8', emissiveIntensity: 0.35, roughness: 0.2, metalness: 0.7
+    face: new THREE.MeshLambertMaterial({ color: '#f4f4f5' }),
+    visor: new THREE.MeshLambertMaterial({
+      color: '#09090b', emissive: '#38bdf8', emissiveIntensity: 0.35
     }),
-    cap: new THREE.MeshStandardMaterial({ color: '#dc2626', roughness: 0.45 }),
-    capBrim: new THREE.MeshStandardMaterial({ color: '#991b1b', roughness: 0.5 }),
-    npcJacket: new THREE.MeshStandardMaterial({
-      color: '#ec4899', emissive: '#831843', emissiveIntensity: 0.3, roughness: 0.5
+    cap: new THREE.MeshLambertMaterial({ color: '#dc2626' }),
+    capBrim: new THREE.MeshLambertMaterial({ color: '#991b1b' }),
+    npcJacket: new THREE.MeshLambertMaterial({
+      color: '#ec4899', emissive: '#831843', emissiveIntensity: 0.3
     }),
-    npcHair: new THREE.MeshStandardMaterial({ color: '#1e1b4b', roughness: 0.55 })
+    npcHair: new THREE.MeshLambertMaterial({ color: '#1e1b4b' })
   }), []);
 
   useEffect(() => {
@@ -1316,19 +1901,43 @@ function Characters({ world, reducedMotion }) {
     playerGroupRef.current.rotation.y = currentYawRef.current;
 
     const time = clock.getElapsedTime();
-    if (st.moving && !reducedMotion) {
+    if (st.sitting) {
+      if (leftLegRef.current) {
+        leftLegRef.current.position.y = 0.32 - 0.16;
+        leftLegRef.current.rotation.x = -1.35;
+      }
+      if (rightLegRef.current) {
+        rightLegRef.current.position.y = 0.32 - 0.16;
+        rightLegRef.current.rotation.x = -1.35;
+      }
+      if (leftArmRef.current) leftArmRef.current.rotation.x = -0.28;
+      if (rightArmRef.current) rightArmRef.current.rotation.x = -0.28;
+      if (torsoRef.current) torsoRef.current.position.y = 0.52 - 0.16;
+    } else if (st.moving && !reducedMotion) {
       const freq = st.sprinting ? 14 : 9.5;
       const swing = Math.sin(st.walkTime * freq) * (st.sprinting ? 0.72 : 0.52);
       const bob = Math.abs(Math.cos(st.walkTime * freq)) * 0.055;
-      if (leftLegRef.current) leftLegRef.current.rotation.x = swing;
-      if (rightLegRef.current) rightLegRef.current.rotation.x = -swing;
+      if (leftLegRef.current) {
+        leftLegRef.current.position.y = 0.32;
+        leftLegRef.current.rotation.x = swing;
+      }
+      if (rightLegRef.current) {
+        rightLegRef.current.position.y = 0.32;
+        rightLegRef.current.rotation.x = -swing;
+      }
       if (leftArmRef.current) leftArmRef.current.rotation.x = -swing * 0.7;
       if (rightArmRef.current) rightArmRef.current.rotation.x = swing * 0.7;
       if (torsoRef.current) torsoRef.current.position.y = 0.52 + bob;
     } else {
       const idleBob = reducedMotion ? 0 : Math.sin(time * 2.4) * 0.018;
-      if (leftLegRef.current) leftLegRef.current.rotation.x *= 0.8;
-      if (rightLegRef.current) rightLegRef.current.rotation.x *= 0.8;
+      if (leftLegRef.current) {
+        leftLegRef.current.position.y = 0.32;
+        leftLegRef.current.rotation.x *= 0.8;
+      }
+      if (rightLegRef.current) {
+        rightLegRef.current.position.y = 0.32;
+        rightLegRef.current.rotation.x *= 0.8;
+      }
       if (leftArmRef.current) leftArmRef.current.rotation.x *= 0.8;
       if (rightArmRef.current) rightArmRef.current.rotation.x *= 0.8;
       if (torsoRef.current) torsoRef.current.position.y = 0.52 + idleBob;
@@ -1514,13 +2123,22 @@ function ProximityHalo({ activeObj, world, reducedMotion }) {
   `;
 }
 
-/* ── Volumetric 3D Rain (1600 particles) + Drifting Sakura Petals (180 particles) ── */
-function WeatherParticles({ rainMode, reducedMotion }) {
+/* ── Volumetric 3D Rain (340 / 85 Eco) + Drifting Sakura Petals (56 / 20 Eco) ── */
+function WeatherParticles({ rainMode, reducedMotion, effectiveEco }) {
   const rainPointsRef = useRef(null);
   const petalPointsRef = useRef(null);
 
-  const RAIN_COUNT = 1600;
-  const PETAL_COUNT = 180;
+  const RAIN_COUNT = 340;
+  const RAIN_ECO_COUNT = 85;
+  const PETAL_COUNT = 56;
+  const PETAL_ECO_COUNT = 20;
+
+  const activeRainCount = rainMode === 'off'
+    ? 0
+    : effectiveEco
+      ? (rainMode === 'light' ? 50 : RAIN_ECO_COUNT)
+      : (rainMode === 'light' ? 140 : RAIN_COUNT);
+  const activePetalCount = effectiveEco ? PETAL_ECO_COUNT : PETAL_COUNT;
 
   const assets = useMemo(() => {
     const rainGeo = new THREE.BufferGeometry();
@@ -1574,9 +2192,9 @@ function WeatherParticles({ rainMode, reducedMotion }) {
   }, []);
 
   useEffect(() => {
-    const activeCount = rainMode === 'off' ? 0 : rainMode === 'light' ? 560 : RAIN_COUNT;
-    assets.rainGeo.setDrawRange(0, activeCount);
-  }, [rainMode, assets]);
+    assets.rainGeo.setDrawRange(0, activeRainCount);
+    assets.petalGeo.setDrawRange(0, activePetalCount);
+  }, [activeRainCount, activePetalCount, assets]);
 
   useEffect(() => {
     return () => {
@@ -1594,11 +2212,10 @@ function WeatherParticles({ rainMode, reducedMotion }) {
     const dt = Math.min(delta, 0.05);
     const t = clock.getElapsedTime();
 
-    if (rainMode !== 'off' && rainPointsRef.current) {
-      const count = rainMode === 'light' ? 560 : RAIN_COUNT;
+    if (activeRainCount > 0 && rainPointsRef.current) {
       const pos = assets.rainPos;
       const spd = assets.rainSpd;
-      for (let i = 0; i < count; i++) {
+      for (let i = 0; i < activeRainCount; i++) {
         const idx = i * 3;
         pos[idx + 1] -= spd[i] * dt;
         pos[idx] -= 1.6 * dt;
@@ -1613,7 +2230,7 @@ function WeatherParticles({ rainMode, reducedMotion }) {
     if (petalPointsRef.current) {
       const pPos = assets.petalPos;
       const pMeta = assets.petalMeta;
-      for (let i = 0; i < PETAL_COUNT; i++) {
+      for (let i = 0; i < activePetalCount; i++) {
         const idx = i * 3;
         const vx = pMeta[idx];
         const vy = pMeta[idx + 1];
@@ -1734,40 +2351,148 @@ function CameraRig({ cameraMode, orbitRef, world }) {
   return null;
 }
 
+/* ── Rolling FPS Monitor Hook (~2.5s below 34fps triggers onAutoEco) ── */
+function useAutoEcoMonitor(active, effectiveEco, reducedMotion, onAutoEco) {
+  const onAutoEcoRef = useRef(onAutoEco);
+  onAutoEcoRef.current = onAutoEco;
+
+  const statsRef = useRef({ accTime: 0, frames: 0, lowTime: 0, fired: false });
+
+  useEffect(() => {
+    statsRef.current.accTime = 0;
+    statsRef.current.frames = 0;
+    statsRef.current.lowTime = 0;
+    if (!effectiveEco) {
+      statsRef.current.fired = false;
+    }
+  }, [active, effectiveEco, reducedMotion]);
+
+  useFrame((_, delta) => {
+    const st = statsRef.current;
+    if (!active || effectiveEco || reducedMotion || st.fired) return;
+    if (delta <= 0 || delta > 0.25) return;
+
+    st.accTime += delta;
+    st.frames += 1;
+    if (st.accTime >= 0.5) {
+      const avgFps = st.frames / st.accTime;
+      if (avgFps < 34) {
+        st.lowTime += st.accTime;
+        if (st.lowTime >= 2.5) {
+          st.fired = true;
+          onAutoEcoRef.current?.();
+        }
+      } else {
+        st.lowTime = 0;
+      }
+      st.accTime = 0;
+      st.frames = 0;
+    }
+  });
+}
+
 /* ── Root 3D Town Scene ── */
-function TownScene({ settings, activeObj, cameraMode, orbitRef, osReducedMotion, onReady }) {
+function TownScene({ settings, active, activeObj, cameraMode, orbitRef, osReducedMotion, onReady, controller }) {
   const world = window.AnshWorld;
+  const { gl, scene, camera } = useThree();
   const reducedMotion = Boolean(settings.reducedMotion || osReducedMotion);
+  const effectiveEco = Boolean(settings.effectiveEco);
+  const moodPreset = MOOD_PRESETS[settings.mood] || MOOD_PRESETS.midnight;
+
+  const fogRef = useRef(null);
+  const hemiRef = useRef(null);
+  const dirRef = useRef(null);
+
+  const initialBgArgs = useMemo(() => [moodPreset.bg], []);
+  const initialFogArgs = useMemo(() => [moodPreset.fog, moodPreset.fogDensity], []);
+  const moodColors = useMemo(() => ({
+    bg: new THREE.Color(),
+    fog: new THREE.Color(),
+    sky: new THREE.Color(),
+    ground: new THREE.Color(),
+    key: new THREE.Color()
+  }), []);
+
+  useEffect(() => {
+    controller.renderContext = { gl, scene, camera };
+    return () => {
+      if (controller.renderContext?.gl === gl) {
+        controller.renderContext = null;
+      }
+    };
+  }, [gl, scene, camera, controller]);
 
   useEffect(() => {
     onReady();
   }, [onReady]);
 
+  useAutoEcoMonitor(active, effectiveEco, reducedMotion, settings.onAutoEco);
+
+  useFrame((_, delta) => {
+    const alpha = Math.min(1, delta * 3.5);
+    if (scene.background?.isColor) {
+      moodColors.bg.set(moodPreset.bg);
+      scene.background.lerp(moodColors.bg, alpha);
+    }
+    if (fogRef.current) {
+      moodColors.fog.set(moodPreset.fog);
+      fogRef.current.color.lerp(moodColors.fog, alpha);
+      fogRef.current.density += (moodPreset.fogDensity - fogRef.current.density) * alpha;
+    }
+    if (hemiRef.current) {
+      moodColors.sky.set(moodPreset.hemiSky);
+      moodColors.ground.set(moodPreset.hemiGround);
+      hemiRef.current.color.lerp(moodColors.sky, alpha);
+      hemiRef.current.groundColor.lerp(moodColors.ground, alpha);
+    }
+    if (dirRef.current) {
+      moodColors.key.set(moodPreset.keyColor);
+      dirRef.current.color.lerp(moodColors.key, alpha);
+    }
+  });
+
   if (!world) return null;
 
   return html`
-    <color attach="background" args=${['#06080f']} />
-    <fogExp2 attach="fog" args=${['#070a12', 0.022]} />
+    <color attach="background" args=${initialBgArgs} />
+    <fogExp2 ref=${fogRef} attach="fog" args=${initialFogArgs} />
 
-    <ambientLight intensity=${0.78} color="#94a3b8" />
-    <hemisphereLight args=${['#38bdf8', '#1e1b2e', 0.58]} />
-    <directionalLight position=${[14, 24, 16]} intensity=${1.55} color="#e2e8f0" />
-    <directionalLight position=${[-16, 12, -10]} intensity=${0.55} color="#f472b6" />
+    <hemisphereLight ref=${hemiRef} args=${[moodPreset.hemiSky, moodPreset.hemiGround, 0.95]} />
+    <directionalLight ref=${dirRef} position=${[14, 24, 16]} intensity=${1.65} color=${moodPreset.keyColor} />
 
     <${InstancedTown} world=${world} bloom=${settings.bloom} />
-    <${CanalWater} cols=${world.COLS} bloom=${settings.bloom} reducedMotion=${reducedMotion} />
+    <${CyberpunkSkyline}
+      bloom=${settings.bloom}
+      mood=${moodPreset}
+      reducedMotion=${reducedMotion}
+      effectiveEco=${effectiveEco}
+    />
+    <${CanalWater}
+      cols=${world.COLS}
+      bloom=${settings.bloom}
+      mood=${moodPreset}
+      reducedMotion=${reducedMotion}
+      effectiveEco=${effectiveEco}
+    />
     <${SakuraTrees}
       sakuras=${world.PROPS.sakuras}
       cols=${world.COLS}
       rows=${world.ROWS}
       reducedMotion=${reducedMotion}
+      effectiveEco=${effectiveEco}
     />
-    <${Landmarks} world=${world} bloom=${settings.bloom} reducedMotion=${reducedMotion} />
+    <${Landmarks}
+      world=${world}
+      bloom=${settings.bloom}
+      reducedMotion=${reducedMotion}
+      effectiveEco=${effectiveEco}
+    />
     <${Characters} world=${world} reducedMotion=${reducedMotion} />
     <${ProximityHalo} activeObj=${activeObj} world=${world} reducedMotion=${reducedMotion} />
     <${WeatherParticles}
       rainMode=${reducedMotion ? 'off' : settings.rain}
       reducedMotion=${reducedMotion}
+      effectiveEco=${effectiveEco}
     />
     <${CameraRig} cameraMode=${cameraMode} orbitRef=${orbitRef} world=${world} />
   `;
@@ -1780,6 +2505,7 @@ function WorldApp({ controller }) {
     Boolean(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches)
   );
   const orbitRef = useRef({ yaw: 0, pitch: 0.66, dist: 13.5 });
+  const isEco = Boolean(state.settings.effectiveEco);
 
   useEffect(() => {
     controller.subscribe = setState;
@@ -1816,7 +2542,7 @@ function WorldApp({ controller }) {
     >
       <${WebGLErrorBoundary} onError=${() => { controller.ready = false; }}>
         <${Canvas}
-          dpr=${[1, 2]}
+          dpr=${isEco ? 1 : [1, 1.5]}
           frameloop=${state.active ? 'always' : 'never'}
           gl=${{
             antialias: true,
@@ -1828,11 +2554,13 @@ function WorldApp({ controller }) {
         >
           <${TownScene}
             settings=${state.settings}
+            active=${state.active}
             activeObj=${state.activeObj}
             cameraMode=${state.cameraMode}
             orbitRef=${orbitRef}
             osReducedMotion=${osReducedMotion}
             onReady=${() => { controller.ready = true; }}
+            controller=${controller}
           />
         <//>
       <//>
@@ -1845,6 +2573,7 @@ const controller = {
   root: null,
   hostEl: null,
   ready: false,
+  renderContext: null,
   subscribe: null,
   state: {
     active: false,
@@ -1853,7 +2582,10 @@ const controller = {
     settings: {
       rain: 'normal',
       bloom: true,
-      reducedMotion: false
+      reducedMotion: false,
+      mood: 'midnight',
+      effectiveEco: false,
+      onAutoEco: null
     }
   }
 };
@@ -1913,14 +2645,20 @@ window.Ansh3D = {
 
   syncSettings(settings) {
     if (!settings || typeof settings !== 'object') return;
+    const prev = controller.state.settings;
     controller.state = {
       ...controller.state,
       settings: {
-        rain: settings.rain ?? controller.state.settings.rain,
-        bloom: settings.bloom !== undefined ? Boolean(settings.bloom) : controller.state.settings.bloom,
+        rain: settings.rain ?? prev.rain,
+        bloom: settings.bloom !== undefined ? Boolean(settings.bloom) : prev.bloom,
         reducedMotion: settings.reducedMotion !== undefined
           ? Boolean(settings.reducedMotion)
-          : controller.state.settings.reducedMotion
+          : prev.reducedMotion,
+        mood: settings.mood ?? prev.mood,
+        effectiveEco: settings.effectiveEco !== undefined
+          ? Boolean(settings.effectiveEco)
+          : prev.effectiveEco,
+        onAutoEco: settings.onAutoEco !== undefined ? settings.onAutoEco : prev.onAutoEco
       }
     };
     emitState();
@@ -1930,5 +2668,16 @@ window.Ansh3D = {
     if (controller.state.activeObj === obj) return;
     controller.state = { ...controller.state, activeObj: obj || null };
     emitState();
+  },
+
+  capturePNG() {
+    const ctx = controller.renderContext;
+    if (!ctx || !ctx.gl || !ctx.scene || !ctx.camera) return null;
+    try {
+      ctx.gl.render(ctx.scene, ctx.camera);
+      return ctx.gl.domElement.toDataURL('image/png');
+    } catch {
+      return null;
+    }
   }
 };
