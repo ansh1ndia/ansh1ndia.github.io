@@ -233,7 +233,7 @@
   });
   document.addEventListener('fullscreenchange', syncFullscreenUI);
 
-  /* ── Minimap Toggle & Click-to-Navigate ── */
+  /* ── Minimap Toggle ── */
   const toggleMinimap = () => {
     minimapOpen = !minimapOpen;
     miniPanel.classList.toggle('collapsed', !minimapOpen);
@@ -242,40 +242,10 @@
   };
   miniToggle.addEventListener('click', toggleMinimap);
 
-  miniCanvas.addEventListener('click', e => {
-    if (S.isSceneOpen() || S.isDialogOpen()) return;
-    const rect = miniCanvas.getBoundingClientRect();
-    const wx = ((e.clientX - rect.left) / rect.width) * W.WIDTH;
-    const wy = ((e.clientY - rect.top) / rect.height) * W.HEIGHT;
-    Audio.playUI(520);
-    P.moveToPoint(wx, wy, null);
-  });
-
-  /* ── World Canvas Click (Walk to clicked building/tile or enter immediately if near) ── */
-  canvas.addEventListener('click', e => {
+  /* ── World Canvas Click (Focus / Dismiss Dialog — movement is controls-only) ── */
+  canvas.addEventListener('click', () => {
     canvas.focus({ preventScroll: true });
-    if (S.isSceneOpen()) return;
-    if (S.isDialogOpen()) { S.closeDialog(); return; }
-
-    const rect = canvas.getBoundingClientRect();
-    const wp = R.screenToWorld(e.clientX, e.clientY, rect);
-
-    const hit = W.INTERACTABLES.find(obj => {
-      const b = obj.hitBox;
-      return b && wp.x >= b.x1 && wp.x <= b.x2 && wp.y >= b.y1 && wp.y <= b.y2;
-    });
-
-    if (hit) {
-      if (activeObj && activeObj.id === hit.id) {
-        S.handleInteractable(hit);
-      } else if (hit.spawn) {
-        P.moveToPoint(hit.spawn.x, hit.spawn.y, hit);
-      } else {
-        P.moveToPoint(hit.tx * W.T + 16, (hit.ty + 1) * W.T + 16, hit);
-      }
-    } else {
-      P.moveToPoint(wp.x, wp.y, null);
-    }
+    if (S.isDialogOpen()) S.closeDialog();
   });
 
   /* ── Touch D-Pad & Action Button ── */

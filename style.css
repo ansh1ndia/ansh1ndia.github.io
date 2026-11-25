@@ -55,7 +55,7 @@ button { font-family: inherit; -webkit-tap-highlight-color: transparent; }
   object-fit: contain;
   image-rendering: pixelated;
   image-rendering: crisp-edges;
-  cursor: pointer;
+  cursor: default;
   outline: none;
 }
 
@@ -299,7 +299,7 @@ button { font-family: inherit; -webkit-tap-highlight-color: transparent; }
   display: block;
   width: 152px; height: 88px;
   image-rendering: pixelated;
-  cursor: crosshair;
+  cursor: default;
 }
 
 /* ── Pokemon-Style RPG Bottom Dialog ── */
