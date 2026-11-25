@@ -2278,19 +2278,22 @@ function CameraRig({ cameraMode, orbitRef, world, controller }) {
     const dom = gl.domElement;
     if (!dom) return;
 
-    let dragging = false;
+    let activePointerId = null;
     let lastX = 0;
     let lastY = 0;
+    const prevTouchAction = dom.style.touchAction;
+    dom.style.touchAction = 'none';
 
     const onPointerDown = e => {
       if (e.button !== 0 && e.pointerType === 'mouse') return;
-      dragging = true;
+      if (activePointerId !== null) return;
+      activePointerId = e.pointerId;
       lastX = e.clientX;
       lastY = e.clientY;
     };
 
     const onPointerMove = e => {
-      if (!dragging) return;
+      if (activePointerId === null || e.pointerId !== activePointerId) return;
       const dx = e.clientX - lastX;
       const dy = e.clientY - lastY;
       lastX = e.clientX;
@@ -2300,8 +2303,10 @@ function CameraRig({ cameraMode, orbitRef, world, controller }) {
       controller.cameraYaw = orbitRef.current.yaw;
     };
 
-    const onPointerUp = () => {
-      dragging = false;
+    const onPointerUp = e => {
+      if (activePointerId === null || e.pointerId === activePointerId) {
+        activePointerId = null;
+      }
     };
 
     const onWheel = e => {
@@ -2315,6 +2320,7 @@ function CameraRig({ cameraMode, orbitRef, world, controller }) {
     dom.addEventListener('wheel', onWheel, { passive: true });
 
     return () => {
+      dom.style.touchAction = prevTouchAction;
       dom.removeEventListener('pointerdown', onPointerDown);
       window.removeEventListener('pointermove', onPointerMove);
       window.removeEventListener('pointerup', onPointerUp);
@@ -2329,7 +2335,6 @@ function CameraRig({ cameraMode, orbitRef, world, controller }) {
     const pz = P?.state ? pxToWorldZ(P.state.y, world.T, world.ROWS) : 4;
 
     const { yaw, pitch, dist } = orbitRef.current;
-    controller.cameraYaw = yaw;
 
     if (cameraMode === 'overview') {
       const zoomScale = dist / 13.5;
@@ -2348,6 +2353,12 @@ function CameraRig({ cameraMode, orbitRef, world, controller }) {
     const alpha = Math.min(1, delta * 7.5);
     camera.position.lerp(desiredPos, alpha);
     camera.lookAt(targetVec);
+
+    const lookDx = targetVec.x - camera.position.x;
+    const lookDz = targetVec.z - camera.position.z;
+    controller.cameraYaw = Math.hypot(lookDx, lookDz) > 0.01
+      ? Math.atan2(-lookDx, -lookDz)
+      : yaw;
   });
 
   return null;

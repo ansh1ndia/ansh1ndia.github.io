@@ -611,13 +611,28 @@
 
   document.querySelectorAll('.dpad-btn').forEach(btn => {
     const dir = btn.dataset.dir;
-    const down = e => { e.preventDefault(); if (dir) inputKeys[dir] = true; };
-    const up   = () => { if (dir) inputKeys[dir] = false; };
-    btn.addEventListener('mousedown', down);
-    btn.addEventListener('touchstart', down, { passive: false });
-    window.addEventListener('mouseup', up);
-    window.addEventListener('touchend', up);
-    window.addEventListener('touchcancel', up);
+    let activePid = null;
+    const release = e => {
+      if (e && activePid !== null && e.pointerId !== activePid) return;
+      activePid = null;
+      if (dir) inputKeys[dir] = false;
+      btn.classList.remove('active');
+    };
+    btn.addEventListener('pointerdown', e => {
+      if (e.button !== 0 && e.pointerType === 'mouse') return;
+      e.preventDefault();
+      activePid = e.pointerId;
+      btn.setPointerCapture?.(e.pointerId);
+      if (dir) inputKeys[dir] = true;
+      btn.classList.add('active');
+    });
+    btn.addEventListener('pointerup', release);
+    btn.addEventListener('pointercancel', release);
+    btn.addEventListener('lostpointercapture', release);
+  });
+  window.addEventListener('blur', () => {
+    inputKeys.up = inputKeys.down = inputKeys.left = inputKeys.right = inputKeys.shift = false;
+    document.querySelectorAll('.dpad-btn.active').forEach(b => b.classList.remove('active'));
   });
 
   /* ── Keyboard Controls ── */

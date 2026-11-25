@@ -70,7 +70,7 @@ button { font-family: inherit; -webkit-tap-highlight-color: transparent; }
 }
 .game-root.is-3d #cityCanvas { opacity: 0; pointer-events: none; }
 .game-root.is-3d .world-3d-mount { opacity: 1; pointer-events: auto; }
-.world-3d-mount canvas { display: block; width: 100%; height: 100%; outline: none; }
+.world-3d-mount canvas { display: block; width: 100%; height: 100%; outline: none; touch-action: none; }
 
 .world3d-hud-chip {
   position: absolute; top: 4rem; left: 50%; transform: translateX(-50%) translateY(-6px); z-index: 18;
@@ -716,7 +716,7 @@ button { font-family: inherit; -webkit-tap-highlight-color: transparent; }
   .touch-pad { display: flex; left: .9rem; right: .9rem; bottom: max(1rem, env(safe-area-inset-bottom)); z-index: 22; }
   .dpad-rpg, .dpad-mid { gap: .32rem; }
   .dpad-btn { width: 48px; height: 48px; border-radius: 6px; background: var(--hud-bg); border-color: rgba(255,255,255,.18); touch-action: none; }
-  .dpad-btn:active { transform: scale(.93); border-color: var(--crimson); background: rgba(239,68,68,.22); }
+  .dpad-btn:active, .dpad-btn.active { transform: scale(.93); border-color: var(--crimson); background: rgba(239,68,68,.22); }
   .dpad-btn svg { width: 20px; height: 20px; }
   .action-btn {
     min-width: 112px; height: 50px; padding: .7rem 1rem; border-radius: 6px;
