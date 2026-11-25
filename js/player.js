@@ -13,6 +13,7 @@ window.AnshPlayer = (() => {
     sitting: false,
     standingPos: null,
     dir: 'up',
+    moveAngle: Math.PI,
     moving: false,
     walkTime: 0,
     idleTime: 0,
@@ -73,7 +74,7 @@ window.AnshPlayer = (() => {
     state.sitting = false;
   };
 
-  const update = (dt, inputKeys, blocked, onArrive) => {
+  const update = (dt, inputKeys, blocked, onArrive, cameraYaw = 0) => {
     if (blocked) {
       state.moving = false;
       state.idleTime += dt;
@@ -102,6 +103,14 @@ window.AnshPlayer = (() => {
       const len = Math.hypot(dx, dy);
       dx /= len;
       dy /= len;
+      if (cameraYaw) {
+        const sinY = Math.sin(cameraYaw);
+        const cosY = Math.cos(cameraYaw);
+        const fwd = -dy;
+        const rgt = dx;
+        dx = -sinY * fwd + cosY * rgt;
+        dy = -cosY * fwd - sinY * rgt;
+      }
     } else if (state.targetPoint) {
       const tx = state.targetPoint.x - state.x;
       const ty = state.targetPoint.y - state.y;
@@ -127,6 +136,7 @@ window.AnshPlayer = (() => {
     }
 
     if (state.moving) {
+      state.moveAngle = Math.atan2(dx, dy);
       if (Math.abs(dx) >= Math.abs(dy)) state.dir = dx < 0 ? 'left' : 'right';
       else state.dir = dy < 0 ? 'up' : 'down';
 

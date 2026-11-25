@@ -1895,7 +1895,7 @@ function Characters({ world, reducedMotion }) {
     const pz = pxToWorldZ(st.y, tSize, rows);
     playerGroupRef.current.position.set(px, 0, pz);
 
-    const targetYaw = DIR_YAW[st.dir] ?? 0;
+    const targetYaw = st.moveAngle !== undefined ? st.moveAngle : (DIR_YAW[st.dir] ?? 0);
     const rotAlpha = Math.min(1, delta * 14);
     currentYawRef.current = lerpAngle(currentYawRef.current, targetYaw, rotAlpha);
     playerGroupRef.current.rotation.y = currentYawRef.current;
@@ -2269,7 +2269,7 @@ function WeatherParticles({ rainMode, reducedMotion, effectiveEco }) {
 }
 
 /* ── Smooth Chase Cam & Aerial Isometric Overview Controller ── */
-function CameraRig({ cameraMode, orbitRef, world }) {
+function CameraRig({ cameraMode, orbitRef, world, controller }) {
   const { camera, gl } = useThree();
   const targetVec = useMemo(() => new THREE.Vector3(), []);
   const desiredPos = useMemo(() => new THREE.Vector3(), []);
@@ -2297,6 +2297,7 @@ function CameraRig({ cameraMode, orbitRef, world }) {
       lastY = e.clientY;
       orbitRef.current.yaw -= dx * 0.0055;
       orbitRef.current.pitch = Math.max(0.28, Math.min(1.25, orbitRef.current.pitch + dy * 0.0045));
+      controller.cameraYaw = orbitRef.current.yaw;
     };
 
     const onPointerUp = () => {
@@ -2328,6 +2329,7 @@ function CameraRig({ cameraMode, orbitRef, world }) {
     const pz = P?.state ? pxToWorldZ(P.state.y, world.T, world.ROWS) : 4;
 
     const { yaw, pitch, dist } = orbitRef.current;
+    controller.cameraYaw = yaw;
 
     if (cameraMode === 'overview') {
       const zoomScale = dist / 13.5;
@@ -2494,7 +2496,7 @@ function TownScene({ settings, active, activeObj, cameraMode, orbitRef, osReduce
       reducedMotion=${reducedMotion}
       effectiveEco=${effectiveEco}
     />
-    <${CameraRig} cameraMode=${cameraMode} orbitRef=${orbitRef} world=${world} />
+    <${CameraRig} cameraMode=${cameraMode} orbitRef=${orbitRef} world=${world} controller=${controller} />
   `;
 }
 
@@ -2573,6 +2575,7 @@ const controller = {
   root: null,
   hostEl: null,
   ready: false,
+  cameraYaw: 0,
   renderContext: null,
   subscribe: null,
   state: {
@@ -2637,6 +2640,10 @@ window.Ansh3D = {
 
   getCameraMode() {
     return controller.state.cameraMode;
+  },
+
+  getCameraYaw() {
+    return controller.cameraYaw || 0;
   },
 
   isReady() {

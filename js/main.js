@@ -788,7 +788,8 @@
     combinedKeys.shift = inputKeys.shift || touchSprint;
 
     const blocked = S.isSceneOpen() || S.isDialogOpen() || settingsOpen || passportOpen || cmdOpen;
-    activeObj = P.update(dt, combinedKeys, blocked);
+    const cameraYaw = is3DMode ? (window.Ansh3D?.getCameraYaw?.() || 0) : 0;
+    activeObj = P.update(dt, combinedKeys, blocked, null, cameraYaw);
 
     if (!is3DMode && !S.isSceneOpen()) {
       R.updateCamera(P.state.x, P.state.y, canvas.width, canvas.height);
