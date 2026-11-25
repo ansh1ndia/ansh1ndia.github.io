@@ -61,6 +61,35 @@ window.ANSH_DATA = {
       'src/GlyphLens.Windows — WGC, Windows OCR & Pipe launcher',
       'src/GlyphLens.Infrastructure — IPC framing, cache & config',
       'worker/glyphlens_worker — Python OCR & CTranslate2 worker'
+    ],
+    ocrSamples: [
+      {
+        id: 'jp_ui',
+        label: 'JP Settings',
+        target: 'Target: Desktop Window (D3D11 Capture)',
+        tag: 'Windows.Media.Ocr · Local Cache Hit',
+        sourceText: '設定 · ローカル翻訳モード',
+        translation: 'Settings · Local translation mode',
+        latency: '0.38s · 0% Cloud'
+      },
+      {
+        id: 'zh_app',
+        label: 'ZH Dialogue',
+        target: 'Target: RPG Client (Named Pipe Frame)',
+        tag: 'PaddleOCR PP-OCRv5 · 1.2% CER',
+        sourceText: '正在离线识别屏幕文字，无需上传云端。',
+        translation: 'Recognizing screen text offline without uploading frames to the cloud.',
+        latency: '0.64s · CTranslate2'
+      },
+      {
+        id: 'zh_hud',
+        label: 'ZH Spec Sheet',
+        target: 'Target: PDF Technical Datasheet',
+        tag: 'Paragraph Grouping · CTranslate2 Int8',
+        sourceText: '帧缓存仅保存在内存中 · 会话令牌已验证',
+        translation: 'Frame buffers stay in memory only · Session token verified',
+        latency: '0.51s · Named Pipe ACL'
+      }
     ]
   },
 
@@ -101,6 +130,20 @@ window.ANSH_DATA = {
       { label: 'Database & Auth', value: 'PostgreSQL (Portways WS), Supabase SSR' },
       { label: 'Security', value: 'WebAuthn Passkeys, TOTP MFA (otplib + qrcode)' },
       { label: 'Visualizations', value: 'Recharts 3.10.1, date-fns 4.1.0, Zod 4.1' }
+    ],
+    volumeHistory: [
+      { wk: 'W1', kg: 11400 },
+      { wk: 'W2', kg: 12150 },
+      { wk: 'W3', kg: 12800 },
+      { wk: 'W4', kg: 12450 },
+      { wk: 'W5', kg: 13600 },
+      { wk: 'W6', kg: 14480 }
+    ],
+    defaultSets: [
+      { id: 'bench', name: 'Barbell Bench Press', target: '4 × 6 · 80 kg', done: true },
+      { id: 'pullups', name: 'Weighted Pull-Ups', target: '4 × 8 · +15 kg', done: false },
+      { id: 'rdl', name: 'Romanian Deadlift', target: '3 × 8 · 105 kg', done: false },
+      { id: 'ohp', name: 'Standing Overhead Press', target: '3 × 8 · 52.5 kg', done: false }
     ]
   },
 
@@ -343,11 +386,11 @@ window.ANSH_DATA = {
   dialogs: {
     sign_plaza: {
       speaker: 'TOWN DIRECTORY SIGN',
-      text: 'ANSH TOWN PLAZA // North across Bridge: GlyphLens Lab (West) & Arcus Studio (East). Plaza: Intro Board (Left) · Mail Terminal (Right).'
+      text: 'ANSH TOWN PLAZA // North across Bridge: GlyphLens Lab (West) & Arcus Studio (East). Plaza: Intro Board (Left) · Mail Terminal (Right) · 4 Rewatch Taste Corners · Press [V] for 3D Mode!'
     },
     sign_bridge: {
       speaker: 'CANAL BRIDGE SIGN',
-      text: 'CENTRAL CANAL BRIDGE // Cross north to explore GLYPHLENS (C# / Python OCR) on the west wing and ARCUS (Next.js / PostgreSQL) on the east wing.'
+      text: 'CENTRAL CANAL BRIDGE // Cross north to explore GLYPHLENS (C# / Python OCR) on the west wing and ARCUS (Next.js / PostgreSQL) on the east wing. Hold [SHIFT] to sprint.'
     },
     sign_glyphlens: {
       speaker: 'GLYPHLENS LAB SIGN',
@@ -359,15 +402,42 @@ window.ANSH_DATA = {
     },
     sign_shrine: {
       speaker: 'NORTH PROMENADE SIGN',
-      text: 'SAKURA SHRINE // Step north to visit the torii monument, or take the wet avenue west to GlyphLens and east to Arcus.'
+      text: 'SAKURA SHRINE // Step north to visit the torii monument & shrine cat, or take the wet avenue west to GlyphLens and east to Arcus.'
     },
     npc_guide: {
       speaker: 'TOWN GUIDE · REN',
-      text: 'Rain never stops in Ansh Town, but the neon keeps the streets alive. Follow the signboards across the bridge to explore GlyphLens & Arcus!'
+      text: 'Rain never stops in Ansh Town, but the neon keeps the streets alive. Hold [SHIFT] to sprint, press [V] to switch between 2D Pixel & 3D WebGL, and collect all 10 Passport Stamps!'
     },
     shrine_stone: {
-      speaker: 'SAKURA SHRINE',
-      text: '"Build tools that stay out of your way." — Ansh, Lucknow. Press [E] at any lit doorway to step inside a project.'
+      speaker: 'SAKURA SHRINE // OMIKUJI',
+      text: '"Build tools that stay out of your way." — Ansh, Lucknow. May your builds compile cleanly and your IndexedDB drafts never drop.'
     }
-  }
+  },
+
+  vendingDrinks: [
+    'MATCHA ZERO // Cold-brew Uji matcha in a matte crimson can. (+10% Focus)',
+    'SAKURA SODA // Sparkling white peach with pink neon fizz. (+15% Aesthetic)',
+    'LUCKNOW CHAI-X // Cardamom-spiced espresso tonic, midnight edition. (+20% Shipping Speed)',
+    'YUZU SPARK // Crisp citrus electrolyte fuel for late-night commits. (+12% Clarity)'
+  ],
+
+  shrineFortunes: [
+    'GREAT BLESSING // Zero regression builds & sub-second OCR latency await you today.',
+    'RISING STAR // The code you simplify tonight becomes your cleanest architecture tomorrow.',
+    'QUIET FOCUS // Turn on Rain Audio, mute distractions, and ship one meaningful slice.',
+    'CURATED TASTE // Take a break at the SE Song Corner — The Smiths never miss in the rain.'
+  ],
+
+  passportIds: [
+    'glyphlens',
+    'arcus',
+    'about',
+    'contact',
+    'shrine_stone',
+    'npc_guide',
+    'rewatch_films',
+    'rewatch_series',
+    'rewatch_albums',
+    'rewatch_songs'
+  ]
 };

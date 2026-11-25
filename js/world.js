@@ -324,6 +324,23 @@ window.AnshWorld = (() => {
     }
   }
 
+  /* Register interactive vending machines from V tiles */
+  PROPS.vendors.forEach((v, idx) => {
+    const isWest = v.c < 20;
+    INTERACTABLES.push({
+      id: isWest ? 'vending_west' : 'vending_east',
+      kind: 'vending',
+      label: isWest ? 'DRINK UNIT 01' : 'DRINK UNIT 02',
+      zone: isWest ? 'Central Plaza West · Cyber Vend' : 'Central Plaza East · Cyber Vend',
+      prompt: 'Buy Midnight Drink',
+      accent: isWest ? 'crimson' : 'blue',
+      tx: v.c,
+      ty: v.r,
+      index: idx,
+      hitBox: { x1: v.c * T - 4, y1: v.r * T - 4, x2: (v.c + 1) * T + 4, y2: (v.r + 1) * T + 4 }
+    });
+  });
+
   const getZoneName = (x, y) => {
     const c = x / T;
     const r = y / T;

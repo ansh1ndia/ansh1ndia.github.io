@@ -2,25 +2,69 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>ANSH TOWN — Interactive Cyberpunk Portfolio</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#05070c" />
+  <meta name="description" content="ANSH TOWN — Interactive 2D & React Three.js 3D cyberpunk portfolio by Ansh (Lucknow, India) featuring GlyphLens, Arcus, and Rewatch curation." />
+  <title>ANSH TOWN — Interactive 2D/3D Cyberpunk Portfolio</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%2305070c'/%3E%3Crect x='4' y='4' width='24' height='24' fill='none' stroke='%23ef4444' stroke-width='2.5'/%3E%3Crect x='12' y='12' width='8' height='8' fill='%23ef4444'/%3E%3C/svg%3E" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preconnect" href="https://esm.sh" crossorigin />
+  <link rel="preconnect" href="https://unpkg.com" crossorigin />
+  <link rel="preconnect" href="https://image.tmdb.org" />
+  <link rel="preconnect" href="https://coverartarchive.org" />
+
   <link rel="stylesheet" href="style.css" />
-  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:opsz,wght@9..40,400;9..40,500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+
+  <script type="importmap">
+  {
+    "imports": {
+      "react": "https://esm.sh/react@19.1.0",
+      "react/": "https://esm.sh/react@19.1.0/",
+      "react/jsx-runtime": "https://esm.sh/react@19.1.0/jsx-runtime",
+      "react-dom": "https://esm.sh/react-dom@19.1.0",
+      "react-dom/": "https://esm.sh/react-dom@19.1.0/",
+      "react-dom/client": "https://esm.sh/react-dom@19.1.0/client",
+      "three": "https://esm.sh/three@0.185.1",
+      "three/": "https://esm.sh/three@0.185.1/",
+      "three/addons/": "https://esm.sh/three@0.185.1/examples/jsm/",
+      "@react-three/fiber": "https://esm.sh/@react-three/fiber@9.1.2?external=react,react-dom,three",
+      "htm": "https://esm.sh/htm@3.1.1",
+      "gsap": "https://esm.sh/gsap@3.13.0",
+      "canvas-confetti": "https://esm.sh/canvas-confetti@1.9.3"
+    }
+  }
+  </script>
 </head>
 <body>
+  <a class="skip-link" href="#cityCanvas">Skip to Ansh Town Canvas</a>
 
-  <main class="game-root">
-    <!-- World Canvas -->
+  <main class="game-root" id="gameRoot">
+    <!-- 2D Pixel World Canvas -->
     <canvas id="cityCanvas" width="896" height="504" tabindex="0" aria-label="Ansh Town Interactive World"></canvas>
+
+    <!-- React + Three.js + React Three Fiber 3D World Mount -->
+    <div id="world3dMount" class="world-3d-mount" aria-hidden="true"></div>
+
+    <!-- Floating 3D Prompt Pill (mirrors active interactable cleanly in 3D mode) -->
+    <div class="world3d-hud-chip" id="world3dHudChip" aria-hidden="true">
+      <button type="button" class="chip-cam-btn" id="btn3dCam" title="Toggle 3D Camera Perspective">
+        <i data-lucide="camera"></i>
+        <span id="camModeLabel">Chase Cam</span>
+      </button>
+      <span class="chip-prompt" id="world3dPrompt">Drag to orbit · Scroll to zoom</span>
+    </div>
 
     <!-- Top Integrated Game Navigation HUD -->
     <header class="hud-top">
-      <button type="button" class="hud-brand" id="brandHome">
+      <button type="button" class="hud-brand" id="brandHome" aria-label="Ansh Town Home">
         <span class="brand-box" aria-hidden="true"><span></span></span>
         <span class="brand-stack">
-          <span class="brand-name">ANSH TOWN</span>
-          <span class="brand-loc"><i class="loc-sq"></i> LUCKNOW, INDIA</span>
+          <span class="brand-name" translate="no">ANSH TOWN</span>
+          <span class="brand-loc"><i class="loc-sq" aria-hidden="true"></i> LUCKNOW, INDIA</span>
         </span>
       </button>
 
@@ -28,19 +72,19 @@
         <button type="button" class="nav-pill is-current" id="navExplore"><span>[01]</span> Explore</button>
 
         <div class="hud-dropdown-wrap">
-          <button type="button" class="nav-pill" id="navProjects" aria-expanded="false">
+          <button type="button" class="nav-pill" id="navProjects" aria-expanded="false" aria-controls="projectsDropdown">
             <span>[02]</span> Projects
           </button>
           <div class="projects-dropdown" id="projectsDropdown" role="menu">
             <button type="button" class="dd-item dd-crimson" data-open-loc="glyphlens" role="menuitem">
-              <span class="dd-dot"></span>
+              <span class="dd-dot" aria-hidden="true"></span>
               <span>
                 <strong>GlyphLens</strong>
                 <small>Offline Windows OCR Translator</small>
               </span>
             </button>
             <button type="button" class="dd-item dd-blue" data-open-loc="arcus" role="menuitem">
-              <span class="dd-dot"></span>
+              <span class="dd-dot" aria-hidden="true"></span>
               <span>
                 <strong>Arcus</strong>
                 <small>Local-First Workout Log</small>
@@ -54,20 +98,75 @@
       </nav>
 
       <div class="hud-sys">
+        <button type="button" class="sys-btn sys-btn-dim" id="btnDimension" aria-pressed="false" title="Toggle 2D Pixel / 3D WebGL Town [V]" aria-label="Toggle 3D WebGL View">
+          <i data-lucide="box" aria-hidden="true"></i>
+          <span class="hud-btn-lbl hud-btn-dim-lbl">3D View</span>
+        </button>
+        <button type="button" class="sys-btn" id="btnPassport" aria-expanded="false" aria-controls="passportDrawer" title="Discovery Passport [P]">
+          <i data-lucide="compass" aria-hidden="true"></i>
+          <span class="hud-btn-lbl" id="passportBadge">0/10</span>
+        </button>
         <button type="button" class="sys-btn" id="btnSound" aria-pressed="false" title="Toggle Rain & SFX">
-          <i data-lucide="audio-lines"></i>
+          <i data-lucide="audio-lines" aria-hidden="true"></i>
           <span class="hud-btn-lbl">Muted</span>
         </button>
-        <button type="button" class="sys-btn" id="btnSettings" aria-expanded="false" title="World Settings">
-          <i data-lucide="sliders-horizontal"></i>
+        <button type="button" class="sys-btn" id="btnSettings" aria-expanded="false" aria-controls="settingsPanel" title="World Settings" aria-label="World Settings">
+          <i data-lucide="sliders-horizontal" aria-hidden="true"></i>
           <span class="hud-btn-lbl">Settings</span>
         </button>
-        <button type="button" class="sys-btn" id="btnFullscreen" title="Toggle Fullscreen">
-          <i data-lucide="maximize-2"></i>
+        <button type="button" class="sys-btn" id="btnFullscreen" title="Toggle Fullscreen" aria-label="Toggle Fullscreen">
+          <i data-lucide="maximize-2" aria-hidden="true"></i>
           <span class="hud-btn-lbl">Fullscreen</span>
         </button>
       </div>
     </header>
+
+    <!-- District Entry Toast -->
+    <div class="zone-banner" id="zoneBanner" aria-live="polite" aria-atomic="true">
+      <span class="zb-k">ENTERING DISTRICT</span>
+      <span class="zb-v" id="zoneBannerTitle">CENTRAL PLAZA</span>
+    </div>
+
+    <!-- Discovery Achievement Toast -->
+    <div class="stamp-toast" id="stampToast" role="status" aria-live="polite">
+      <i data-lucide="sparkles" aria-hidden="true"></i>
+      <span id="stampToastText">Passport Stamp Unlocked</span>
+    </div>
+
+    <!-- Persistent Music Mini-Player Bar (active across Rewatch & Town) -->
+    <aside class="now-playing-bar" id="nowPlayingBar" aria-label="Now Playing" aria-hidden="true">
+      <button type="button" class="np-play" id="npPlayBtn" aria-label="Pause or resume track">
+        <i class="fas fa-pause" aria-hidden="true"></i>
+      </button>
+      <div class="np-info">
+        <span class="np-title" id="npTitle">Track Title</span>
+        <span class="np-meta" id="npMeta">Artist</span>
+      </div>
+      <div class="np-eq" aria-hidden="true">
+        <span></span><span></span><span></span><span></span>
+      </div>
+      <button type="button" class="np-next" id="npNextBtn" aria-label="Next track" title="Next Track">
+        <i class="fas fa-forward-step" aria-hidden="true"></i>
+      </button>
+      <button type="button" class="np-close" id="npCloseBtn" aria-label="Stop music" title="Stop Music">
+        <i class="fas fa-xmark" aria-hidden="true"></i>
+      </button>
+    </aside>
+
+    <!-- Explorer Passport Drawer -->
+    <section class="passport-drawer" id="passportDrawer" aria-label="Explorer Passport">
+      <div class="set-head">
+        <span>TOWN // PASSPORT</span>
+        <button type="button" class="set-close" id="closePassport" aria-label="Close Passport">ESC</button>
+      </div>
+      <div class="pass-body">
+        <div class="pass-meter">
+          <span class="pass-count" id="passportCountText">0 / 10 Landmarks Discovered</span>
+          <div class="pass-bar"><div class="pass-fill" id="passportFill"></div></div>
+        </div>
+        <ul class="pass-list" id="passportList"></ul>
+      </div>
+    </section>
 
     <!-- World Settings Drawer -->
     <section class="settings-panel" id="settingsPanel" aria-label="World Settings">
@@ -77,6 +176,13 @@
       </div>
       <div class="set-body">
         <div class="set-row">
+          <span class="set-lbl">World Dimension</span>
+          <div class="set-seg">
+            <button type="button" class="seg-btn active" data-set-dim="2d">2D Pixel</button>
+            <button type="button" class="seg-btn" data-set-dim="3d">3D WebGL</button>
+          </div>
+        </div>
+        <div class="set-row">
           <span class="set-lbl">Rain Intensity</span>
           <div class="set-seg">
             <button type="button" class="seg-btn active" data-set-rain="normal">Full</button>
@@ -84,19 +190,29 @@
             <button type="button" class="seg-btn" data-set-rain="off">Off</button>
           </div>
         </div>
-        <label class="set-check">
+        <label class="set-check" for="optBloom">
           <span>Neon Glow &amp; Streetlamps</span>
           <input type="checkbox" id="optBloom" checked />
         </label>
-        <label class="set-check">
+        <label class="set-check" for="optLightning">
+          <span>Distant Storm Lightning</span>
+          <input type="checkbox" id="optLightning" checked />
+        </label>
+        <label class="set-check" for="optAmbience">
+          <span>Midnight Synth Pad (Unmuted)</span>
+          <input type="checkbox" id="optAmbience" checked />
+        </label>
+        <label class="set-check" for="optReducedMotion">
           <span>Reduced Motion</span>
           <input type="checkbox" id="optReducedMotion" />
         </label>
         <div class="set-keys">
           <span><kbd>WASD</kbd> / Arrows: Move</span>
+          <span><kbd>Shift</kbd> Sprint</span>
           <span><kbd>E</kbd> Interact</span>
+          <span><kbd>V</kbd> 2D / 3D</span>
           <span><kbd>M</kbd> Minimap</span>
-          <span><kbd>ESC</kbd> Back</span>
+          <span><kbd>P</kbd> Passport</span>
         </div>
       </div>
     </section>
@@ -110,14 +226,14 @@
           <p class="ctx-msg" id="hudContextMsg">a digital town built around my projects. explore, interact and know my work.</p>
         </div>
       </div>
-      <div class="ctx-hint" id="hudContextHint">[E] interact   [WASD] move   [M] map</div>
+      <div class="ctx-hint" id="hudContextHint">[E] interact   [WASD] move   [SHIFT] sprint   [V] 3D</div>
     </aside>
 
     <!-- Bottom-Right Interactive Minimap -->
     <aside class="hud-minimap" id="minimapPanel" aria-label="Town Minimap">
       <div class="mm-head">
         <span>N</span>
-        <button type="button" class="mm-toggle" id="minimapToggle">[M]</button>
+        <button type="button" class="mm-toggle" id="minimapToggle" aria-label="Toggle Minimap">[M]</button>
       </div>
       <div class="mm-body">
         <canvas id="minimapCanvas" width="152" height="88" aria-label="Town Minimap"></canvas>
@@ -125,37 +241,39 @@
     </aside>
 
     <!-- Pokemon-Style Bottom RPG Dialog Box -->
-    <div class="rpg-dialog" id="rpgDialog" aria-hidden="true">
+    <div class="rpg-dialog" id="rpgDialog" aria-hidden="true" role="dialog" aria-label="Character Dialog">
       <div class="rpg-dialog-inner">
         <span class="rpg-speaker" id="rpgSpeaker">TOWN DIRECTORY</span>
         <p class="rpg-text" id="rpgText"></p>
-        <span class="rpg-next">[E] / CLICK ▼</span>
+        <span class="rpg-next">[E] / TAP ▼</span>
       </div>
     </div>
 
     <!-- Touch / Mobile Controls -->
     <div class="touch-pad" aria-label="Touch Controls">
       <div class="dpad-rpg">
-        <button type="button" class="dpad-btn" data-dir="up" aria-label="Walk up"><i data-lucide="chevron-up"></i></button>
+        <button type="button" class="dpad-btn" data-dir="up" aria-label="Walk up"><i data-lucide="chevron-up" aria-hidden="true"></i></button>
         <div class="dpad-mid">
-          <button type="button" class="dpad-btn" data-dir="left" aria-label="Walk left"><i data-lucide="chevron-left"></i></button>
-          <button type="button" class="dpad-btn" data-dir="down" aria-label="Walk down"><i data-lucide="chevron-down"></i></button>
-          <button type="button" class="dpad-btn" data-dir="right" aria-label="Walk right"><i data-lucide="chevron-right"></i></button>
+          <button type="button" class="dpad-btn" data-dir="left" aria-label="Walk left"><i data-lucide="chevron-left" aria-hidden="true"></i></button>
+          <button type="button" class="dpad-btn" data-dir="down" aria-label="Walk down"><i data-lucide="chevron-down" aria-hidden="true"></i></button>
+          <button type="button" class="dpad-btn" data-dir="right" aria-label="Walk right"><i data-lucide="chevron-right" aria-hidden="true"></i></button>
         </div>
       </div>
-      <button type="button" class="action-btn" id="cityInteract" disabled>E · Interact</button>
+      <div class="touch-right-actions">
+        <button type="button" class="sprint-btn" id="touchSprintBtn" aria-pressed="false" title="Toggle Sprint">Sprint</button>
+        <button type="button" class="action-btn" id="cityInteract" disabled>E · Interact</button>
+      </div>
     </div>
   </main>
 
   <!-- Dedicated In-World Location Transition Overlay (Buildings, Board, Terminal) -->
-  <section class="scene-overlay" id="sceneOverlay" aria-hidden="true" role="dialog" aria-modal="true">
+  <section class="scene-overlay" id="sceneOverlay" aria-hidden="true" role="dialog" aria-modal="true" aria-label="Location Interior">
     <div id="sceneContent"></div>
   </section>
 
   <!-- Scene Wipe Curtain -->
   <div class="scene-curtain" id="sceneCurtain" aria-hidden="true"></div>
 
-  <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js" defer></script>
   <script src="js/data.js" defer></script>
   <script src="js/audio.js" defer></script>
   <script src="js/world.js" defer></script>
@@ -163,5 +281,15 @@
   <script src="js/renderer.js" defer></script>
   <script src="js/scenes.js" defer></script>
   <script src="js/main.js" defer></script>
+  <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js" async onload="window.lucide && window.lucide.createIcons()"></script>
+
+  <!-- Progressive ESM Layer: React 19 + Three.js + React Three Fiber + GSAP + Confetti -->
+  <script type="module" src="js/r3f-world.js"></script>
+  <script type="module" src="js/r3f-showcases.js"></script>
+  <script type="module">
+    import gsap from 'gsap';
+    import confetti from 'canvas-confetti';
+    window.AnshFX = { gsap, confetti };
+  </script>
 </body>
 </html>

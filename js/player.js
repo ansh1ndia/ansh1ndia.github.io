@@ -7,14 +7,17 @@ window.AnshPlayer = (() => {
     y: 19 * T + 16,
     w: 16,
     h: 14,
-    speed: 155, // pixels per second (dt-normalized for consistent 60fps+)
+    speed: 155,
+    sprintSpeed: 240,
+    sprinting: false,
     dir: 'up',
     moving: false,
     walkTime: 0,
     idleTime: 0,
     stepPhase: 0,
     targetPoint: null,
-    pendingTarget: null
+    pendingTarget: null,
+    ripples: []
   };
 
   const collides = (nx, ny) => {
@@ -81,12 +84,20 @@ window.AnshPlayer = (() => {
     }
 
     state.moving = dx !== 0 || dy !== 0;
+    state.sprinting = Boolean(state.moving && inputKeys.shift);
+
+    /* Age ground puddle ripples */
+    for (let i = state.ripples.length - 1; i >= 0; i--) {
+      state.ripples[i].age += dt * 1.9;
+      if (state.ripples[i].age >= 1) state.ripples.splice(i, 1);
+    }
 
     if (state.moving) {
       if (Math.abs(dx) >= Math.abs(dy)) state.dir = dx < 0 ? 'left' : 'right';
       else state.dir = dy < 0 ? 'up' : 'down';
 
-      const step = state.speed * dt;
+      const activeSpeed = state.sprinting ? state.sprintSpeed : state.speed;
+      const step = activeSpeed * dt;
       const nx = state.x + dx * step;
       const ny = state.y + dy * step;
 
@@ -99,14 +110,24 @@ window.AnshPlayer = (() => {
         cancelAutoMove();
       }
 
-      state.walkTime += dt;
+      const cadence = state.sprinting ? 1.45 : 1;
+      state.walkTime += dt * cadence;
       const nextPhase = Math.floor(state.walkTime * 6.5);
       if (nextPhase !== state.stepPhase) {
         state.stepPhase = nextPhase;
         const c = Math.floor(state.x / T);
         const r = Math.floor(state.y / T);
         const onPuddle = window.AnshWorld.MAP[r]?.[c] === 'U';
-        window.AnshAudio.playStep(onPuddle);
+        if (onPuddle || state.sprinting) {
+          state.ripples.push({
+            x: state.x,
+            y: state.y + 8,
+            age: 0,
+            water: onPuddle
+          });
+          if (state.ripples.length > 16) state.ripples.shift();
+        }
+        window.AnshAudio.playStep(onPuddle, state.sprinting);
       }
     } else {
       state.idleTime += dt;
@@ -128,6 +149,17 @@ window.AnshPlayer = (() => {
   };
 
   const draw = ctx => {
+    /* Draw puddle/sprint step rings behind character */
+    state.ripples.forEach(rp => {
+      const a = Math.max(0, (1 - rp.age) * (rp.water ? 0.52 : 0.25));
+      const rad = 3 + rp.age * (rp.water ? 12 : 7);
+      ctx.strokeStyle = rp.water ? `rgba(56,189,248,${a.toFixed(2)})` : `rgba(239,68,68,${a.toFixed(2)})`;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.ellipse(Math.round(rp.x), Math.round(rp.y), rad, rad * 0.45, 0, 0, Math.PI * 2);
+      ctx.stroke();
+    });
+
     const px = Math.round(state.x);
     const py = Math.round(state.y);
     const walkFrame = state.moving ? Math.floor(state.walkTime * 9) % 4 : 0;

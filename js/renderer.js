@@ -18,13 +18,24 @@ window.AnshRenderer = (() => {
     t: (i * 0.11) % 1
   }));
 
-  const petals = Array.from({ length: 40 }, (_, i) => ({
+  const petals = Array.from({ length: 42 }, (_, i) => ({
     x: (i * 97) % W.WIDTH,
     y: (i * 61) % W.HEIGHT,
     vx: 14 + (i % 5) * 4,
     vy: 16 + (i % 4) * 5,
     phase: i * 0.7
   }));
+
+  /* Distant sky tram / patrol drone gliding over the canal */
+  const drone = { x: 0, speed: 68 };
+  /* Steam puffs drifting from vending machines & GlyphLens roof */
+  const steam = Array.from({ length: 18 }, (_, i) => ({
+    phase: (i * 0.19) % 1,
+    ox: (i % 3) - 1,
+    idx: i
+  }));
+  let lightningAlpha = 0;
+  let nextLightningAt = 14;
 
   const camera = { x: 0, y: 0, w: 896, h: 504 };
 
@@ -262,11 +273,14 @@ window.AnshRenderer = (() => {
         }
 
         if (ch === 'V') {
+          const vid = c < 20 ? 'vending_west' : 'vending_east';
+          const near = activeObj?.id === vid;
           ctx.fillStyle = 'rgba(0,0,0,0.5)';
           ctx.fillRect(x + 6, y + 25, 22, 5);
           ctx.fillStyle = '#181b26';
           ctx.fillRect(x + 5, y + 3, 22, 24);
-          ctx.strokeStyle = 'rgba(244,114,182,0.55)';
+          ctx.strokeStyle = near ? '#ffffff' : 'rgba(244,114,182,0.75)';
+          ctx.lineWidth = near ? 1.8 : 1;
           ctx.strokeRect(x + 5.5, y + 3.5, 21, 23);
           ctx.fillStyle = c < 20 ? '#ef4444' : '#38bdf8';
           ctx.fillRect(x + 8, y + 6, 16, 10);
@@ -460,7 +474,7 @@ window.AnshRenderer = (() => {
 
   /* ── Shrine, Intro Board with Portrait, & Detailed Cyberpunk Hero Buildings ── */
   const drawBuildingsAndBoards = (ctx, time, activeObj) => {
-    /* 1. North Sakura Shrine (H) */
+    /* 1. North Sakura Shrine (H) & Shrine Cat */
     const shObj = W.INTERACTABLES.find(i => i.id === 'shrine_stone');
     if (shObj) {
       const sx = shObj.hitBox.x1;
@@ -478,6 +492,21 @@ window.AnshRenderer = (() => {
       ctx.fillRect(sx + 38, sy + 12, 20, 16);
       ctx.strokeStyle = near ? '#f472b6' : 'rgba(255,255,255,0.22)';
       ctx.strokeRect(sx + 38.5, sy + 12.5, 19, 15);
+
+      /* Pixel Calico/Obsidian Shrine Cat perched beside the Torii pillar */
+      const cx = sx + 84;
+      const cy = sy + 24;
+      const tailWag = Math.round(Math.sin(time * 3.4) * 2);
+      ctx.fillStyle = 'rgba(0,0,0,0.4)';
+      ctx.fillRect(cx - 4, cy + 4, 10, 3);
+      ctx.fillStyle = '#f8fafc';
+      ctx.fillRect(cx - 3, cy - 2, 7, 6);
+      ctx.fillRect(cx - 3, cy - 6, 6, 4);
+      ctx.fillStyle = '#f472b6';
+      ctx.fillRect(cx - 3, cy - 8, 2, 2);
+      ctx.fillRect(cx + 1, cy - 8, 2, 2);
+      ctx.fillStyle = '#ef4444';
+      ctx.fillRect(cx + 4, cy - 1 + Math.min(0, tailWag), 2, 4);
     }
 
     /* 2. Intro Billboard ("INTRO BOARD / ANSH. ->" with Pixel Portrait) */
@@ -699,6 +728,31 @@ window.AnshRenderer = (() => {
     }
 
     if (!settings.reducedMotion) {
+      /* Steam rising gently from vending machines */
+      W.PROPS.vendors.forEach((v, vIdx) => {
+        for (let i = 0; i < 4; i++) {
+          const p = ((time * 0.45 + i * 0.25 + vIdx * 0.3) % 1);
+          const sx = v.x + 16 + Math.sin(time * 2 + i) * 3;
+          const sy = v.y - p * 16;
+          ctx.fillStyle = `rgba(226,232,240,${((1 - p) * 0.16).toFixed(2)})`;
+          ctx.fillRect(Math.round(sx), Math.round(sy), 3, 2);
+        }
+      });
+
+      /* Autonomous Neon Patrol Drone gliding across the Canal */
+      drone.x = (drone.x + drone.speed * dt) % (W.WIDTH + 160);
+      const dx = Math.round(drone.x - 80);
+      const dy = 12.2 * T + Math.round(Math.sin(time * 2.8) * 5);
+      ctx.fillStyle = 'rgba(0,0,0,0.45)';
+      ctx.fillRect(dx - 7, dy + 16, 14, 3);
+      ctx.fillStyle = '#1e293b';
+      ctx.fillRect(dx - 8, dy - 3, 16, 6);
+      ctx.fillStyle = Math.sin(time * 12) > 0 ? '#ef4444' : '#38bdf8';
+      ctx.fillRect(dx - 2, dy - 1, 4, 2);
+      ctx.fillStyle = 'rgba(56,189,248,0.16)';
+      ctx.fillRect(dx - 11, dy - 5, 6, 2);
+      ctx.fillRect(dx + 5, dy - 5, 6, 2);
+
       petals.forEach(p => {
         p.x = (p.x + p.vx * dt) % W.WIDTH;
         p.y = (p.y + p.vy * dt) % W.HEIGHT;
@@ -708,8 +762,27 @@ window.AnshRenderer = (() => {
       });
     }
 
+    /* Occasional Distant Sheet Lightning when Storm/Lightning & Rain active */
+    if (!settings.reducedMotion && settings.rain === 'normal' && settings.lightning !== false) {
+      if (time >= nextLightningAt) {
+        lightningAlpha = 0.24;
+        nextLightningAt = time + 16 + Math.random() * 14;
+        window.AnshAudio.playThunder?.();
+      }
+      if (lightningAlpha > 0) {
+        lightningAlpha = Math.max(0, lightningAlpha - dt * 0.75);
+      }
+    } else {
+      lightningAlpha = 0;
+    }
+
     ctx.save();
     ctx.setTransform(1, 0, 0, 1, 0, 0);
+
+    if (lightningAlpha > 0.01) {
+      ctx.fillStyle = `rgba(219, 234, 254, ${lightningAlpha.toFixed(2)})`;
+      ctx.fillRect(0, 0, camera.w, camera.h);
+    }
 
     const rainCount = settings.reducedMotion || settings.rain === 'off'
       ? 0
