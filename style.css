@@ -239,11 +239,15 @@ button { font-family: inherit; }
 .ctx-icon {
   width: 24px; height: 24px; flex-shrink: 0;
   border: 1px solid rgba(239,68,68,.55);
+  background: rgba(10, 14, 24, 0.9);
   color: var(--crimson);
   font-family: var(--ff-m); font-size: .72rem; font-weight: 500;
   display: inline-flex; align-items: center; justify-content: center;
   margin-top: .1rem;
+  pointer-events: auto;
+  cursor: pointer;
 }
+.ctx-icon:hover { border-color: var(--crimson); color: #fff; }
 .ctx-zone {
   font-family: var(--ff-m); font-size: .68rem; font-weight: 500;
   letter-spacing: .12em; text-transform: uppercase;
@@ -781,14 +785,63 @@ button { font-family: inherit; }
   .loc-cards { grid-template-columns: 1fr; }
 }
 @media (hover: none), (max-width: 768px) {
-  .touch-pad { display: flex; }
+  .touch-pad {
+    display: flex;
+    left: .9rem; right: .9rem; bottom: 1rem;
+    z-index: 22;
+  }
+  .dpad-rpg { gap: .32rem; }
+  .dpad-mid { gap: .32rem; }
+  .dpad-btn {
+    width: 48px; height: 48px;
+    border-radius: 6px;
+    background: rgba(7, 10, 17, 0.86);
+    border-color: rgba(255,255,255,.18);
+    touch-action: none;
+  }
+  .dpad-btn:active { transform: scale(.93); border-color: var(--crimson); background: rgba(239,68,68,.22); }
+  .dpad-btn svg { width: 20px; height: 20px; }
+  .action-btn {
+    min-width: 112px; height: 50px;
+    padding: .7rem 1rem;
+    border-radius: 6px;
+    font-size: .68rem; font-weight: 500;
+    background: rgba(7, 10, 17, 0.88);
+    border-color: rgba(255,255,255,.18);
+    touch-action: none;
+  }
+  .action-btn:not(:disabled) {
+    background: rgba(239,68,68,.3);
+    border-color: var(--crimson);
+    box-shadow: 0 0 18px rgba(239,68,68,.3);
+  }
   .hud-btn-lbl { display: none; }
-  .hud-top { top: .5rem; left: .5rem; right: .5rem; padding: .45rem .6rem; flex-wrap: wrap; }
-  .brand-name { font-size: 1.2rem; }
-  .nav-pill { padding: .32rem .48rem; font-size: .58rem; }
-  .hud-context { left: .5rem; bottom: .5rem; width: calc(100vw - 1rem); padding: .55rem .75rem; }
+  .hud-top {
+    top: 0; left: 0; right: 0;
+    padding: .55rem .75rem .9rem;
+    gap: .4rem;
+  }
+  .brand-name { font-size: 1.15rem; }
+  .brand-loc { display: none; }
+  .hud-nav { gap: .55rem; }
+  .nav-pill { padding: .28rem .15rem; font-size: .58rem; letter-spacing: .08em; }
+  .nav-pill span { display: none; }
+
+  /* Keep [i] info neatly tucked under top nav on phones, collapsed by default so controls stay clear */
+  .hud-context {
+    top: 3.6rem; bottom: auto; left: .75rem;
+    width: auto; max-width: calc(100vw - 1.5rem);
+    padding: .42rem .65rem;
+    clip-path: none;
+    pointer-events: auto;
+  }
+  .hud-context.is-collapsed .ctx-top { margin-bottom: 0; align-items: center; gap: .5rem; }
+  .hud-context.is-collapsed .ctx-msg,
+  .hud-context.is-collapsed .ctx-hint { display: none; }
+  .hud-context.is-collapsed .ctx-zone { margin-bottom: 0; font-size: .58rem; }
+
   .hud-minimap { display: none; }
-  .rpg-dialog { bottom: 5.5rem; }
+  .rpg-dialog { bottom: 9.2rem; width: calc(100vw - 1.5rem); }
   .rpg-text { padding-right: 0; padding-bottom: 1.2rem; font-size: .74rem; }
   .term-row { grid-template-columns: 1fr; }
   .podium-grid { grid-template-columns: 1fr; }

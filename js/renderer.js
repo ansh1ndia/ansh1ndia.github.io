@@ -6,8 +6,8 @@ window.AnshRenderer = (() => {
   /* Pooled atmospheric particles (zero GC churn) */
   const MAX_RAIN = 200;
   const rain = Array.from({ length: MAX_RAIN }, (_, i) => ({
-    x: (i * 83) % 896,
-    y: (i * 59) % 504,
+    x: (i * 83) % 1200,
+    y: (i * 59) % 900,
     len: 8 + (i % 6),
     spd: 400 + (i % 6) * 45
   }));

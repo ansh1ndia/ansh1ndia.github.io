@@ -5,6 +5,8 @@
   const miniCanvas  = document.getElementById('minimapCanvas');
   const miniCtx     = miniCanvas.getContext('2d');
 
+  const hudContext  = document.getElementById('hudContext');
+  const ctxToggle   = document.getElementById('ctxToggle');
   const zoneTitle   = document.getElementById('hudZoneTitle');
   const contextMsg  = document.getElementById('hudContextMsg');
   const contextHint = document.getElementById('hudContextHint');
@@ -39,6 +41,46 @@
   let minimapOpen = true;
   let settingsOpen = false;
   let projMenuOpen = false;
+
+  /* ── Responsive Zoomed Viewport + Collapsible [i] Info on Phones ── */
+  const isTouchOrNarrow = () => window.innerWidth <= 900 || (window.matchMedia && window.matchMedia('(hover: none)').matches);
+
+  const updateViewportResolution = () => {
+    const ww = Math.max(320, window.innerWidth);
+    const wh = Math.max(240, window.innerHeight);
+    if (isTouchOrNarrow()) {
+      const aspect = ww / wh;
+      let vw, vh;
+      if (aspect < 1) {
+        vw = 360;
+        vh = Math.min(W.HEIGHT, Math.round(vw / aspect));
+      } else {
+        vh = 340;
+        vw = Math.min(W.WIDTH, Math.round(vh * aspect));
+      }
+      canvas.width = vw;
+      canvas.height = vh;
+    } else {
+      canvas.width = 896;
+      canvas.height = 504;
+    }
+    R.camera.w = canvas.width;
+    R.camera.h = canvas.height;
+  };
+
+  updateViewportResolution();
+  window.addEventListener('resize', updateViewportResolution);
+
+  if (hudContext && isTouchOrNarrow()) {
+    hudContext.classList.add('is-collapsed');
+  }
+  if (ctxToggle && hudContext) {
+    ctxToggle.addEventListener('click', e => {
+      e.stopPropagation();
+      Audio.playUI(520);
+      hudContext.classList.toggle('is-collapsed');
+    });
+  }
 
   /* ── Sound UI Sync (Starts Muted) ── */
   const syncSoundUI = () => {
@@ -250,6 +292,7 @@
     btn.addEventListener('touchstart', down, { passive: false });
     window.addEventListener('mouseup', up);
     window.addEventListener('touchend', up);
+    window.addEventListener('touchcancel', up);
   });
 
   /* ── Keyboard Controls (Safe around Inputs & Accessibility) ── */

@@ -101,11 +101,11 @@
       </div>
     </section>
 
-    <!-- Bottom-Left Contextual Info Panel -->
-    <aside class="hud-context" aria-live="polite">
+    <!-- Contextual Info Panel -->
+    <aside class="hud-context" id="hudContext" aria-live="polite">
       <div class="ctx-top">
-        <span class="ctx-icon">i</span>
-        <div>
+        <button type="button" class="ctx-icon" id="ctxToggle" aria-label="Toggle info panel">i</button>
+        <div class="ctx-copy">
           <div class="ctx-zone" id="hudZoneTitle">WELCOME TO ANSH TOWN</div>
           <p class="ctx-msg" id="hudContextMsg">a digital town built around my projects. explore, interact and know my work.</p>
         </div>
