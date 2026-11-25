@@ -25,10 +25,11 @@ html, body {
   background: var(--bg);
   color: var(--text);
   font-family: var(--ff);
+  -webkit-tap-highlight-color: transparent;
 }
 
 a { text-decoration: none; color: inherit; }
-button { font-family: inherit; }
+button { font-family: inherit; -webkit-tap-highlight-color: transparent; }
 .red { color: var(--crimson); }
 
 /* ── Game Root & World Canvas ── */
@@ -41,6 +42,10 @@ button { font-family: inherit; }
   align-items: center;
   justify-content: center;
   overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  touch-action: manipulation;
 }
 
 #cityCanvas {
@@ -818,20 +823,29 @@ button { font-family: inherit; }
   .hud-btn-lbl { display: none; }
   .hud-top {
     top: 0; left: 0; right: 0;
-    padding: .55rem .75rem .9rem;
-    gap: .4rem;
+    padding: .5rem .75rem .75rem;
+    gap: .35rem .5rem;
+    flex-wrap: wrap;
+  }
+  .hud-brand { order: 1; }
+  .hud-sys { order: 2; margin-left: auto; }
+  .hud-nav {
+    order: 3; width: 100%;
+    justify-content: space-between;
+    gap: .25rem;
+    padding-top: .25rem;
+    border-top: 1px solid rgba(255,255,255,.07);
   }
   .brand-name { font-size: 1.15rem; }
   .brand-loc { display: none; }
-  .hud-nav { gap: .55rem; }
-  .nav-pill { padding: .28rem .15rem; font-size: .58rem; letter-spacing: .08em; }
+  .nav-pill { padding: .28rem .2rem; font-size: .6rem; letter-spacing: .08em; }
   .nav-pill span { display: none; }
 
-  /* Keep [i] info neatly tucked under top nav on phones, collapsed by default so controls stay clear */
+  /* Keep [i] info neatly tucked under 2-row top nav on phones, collapsed by default */
   .hud-context {
-    top: 3.6rem; bottom: auto; left: .75rem;
+    top: 4.85rem; bottom: auto; left: .75rem;
     width: auto; max-width: calc(100vw - 1.5rem);
-    padding: .42rem .65rem;
+    padding: .38rem .6rem;
     clip-path: none;
     pointer-events: auto;
   }

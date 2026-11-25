@@ -52,10 +52,10 @@
       const aspect = ww / wh;
       let vw, vh;
       if (aspect < 1) {
-        vw = 360;
+        vw = 300;
         vh = Math.min(W.HEIGHT, Math.round(vw / aspect));
       } else {
-        vh = 340;
+        vh = 280;
         vw = Math.min(W.WIDTH, Math.round(vh * aspect));
       }
       canvas.width = vw;
