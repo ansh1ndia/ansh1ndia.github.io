@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>ANSH TOWN — Interactive Cyberpunk Portfolio</title>
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:opsz,wght@9..40,400;9..40,500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+</head>
+<body>
+
+  <main class="game-root">
+    <!-- World Canvas -->
+    <canvas id="cityCanvas" width="896" height="504" tabindex="0" aria-label="Ansh Town Interactive World"></canvas>
+
+    <!-- Top Integrated Game Navigation HUD -->
+    <header class="hud-top">
+      <button type="button" class="hud-brand" id="brandHome">
+        <span class="brand-box" aria-hidden="true"><span></span></span>
+        <span class="brand-stack">
+          <span class="brand-name">ANSH TOWN</span>
+          <span class="brand-loc"><i class="loc-sq"></i> LUCKNOW, INDIA</span>
+        </span>
+      </button>
+
+      <nav class="hud-nav" aria-label="World Navigation">
+        <button type="button" class="nav-pill is-current" id="navExplore"><span>[01]</span> Explore</button>
+
+        <div class="hud-dropdown-wrap">
+          <button type="button" class="nav-pill" id="navProjects" aria-expanded="false">
+            <span>[02]</span> Projects
+          </button>
+          <div class="projects-dropdown" id="projectsDropdown" role="menu">
+            <button type="button" class="dd-item dd-crimson" data-open-loc="glyphlens" role="menuitem">
+              <span class="dd-dot"></span>
+              <span>
+                <strong>GlyphLens</strong>
+                <small>Offline Windows OCR Translator</small>
+              </span>
+            </button>
+            <button type="button" class="dd-item dd-blue" data-open-loc="arcus" role="menuitem">
+              <span class="dd-dot"></span>
+              <span>
+                <strong>Arcus</strong>
+                <small>Local-First Workout Log</small>
+              </span>
+            </button>
+          </div>
+        </div>
+
+        <button type="button" class="nav-pill" id="navAbout"><span>[03]</span> About</button>
+        <button type="button" class="nav-pill" id="navContact"><span>[04]</span> Contact</button>
+      </nav>
+
+      <div class="hud-sys">
+        <button type="button" class="sys-btn" id="btnSound" aria-pressed="false" title="Toggle Rain & SFX">
+          <i data-lucide="audio-lines"></i>
+          <span class="hud-btn-lbl">Muted</span>
+        </button>
+        <button type="button" class="sys-btn" id="btnSettings" aria-expanded="false" title="World Settings">
+          <i data-lucide="sliders-horizontal"></i>
+          <span class="hud-btn-lbl">Settings</span>
+        </button>
+        <button type="button" class="sys-btn" id="btnFullscreen" title="Toggle Fullscreen">
+          <i data-lucide="maximize-2"></i>
+          <span class="hud-btn-lbl">Fullscreen</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- World Settings Drawer -->
+    <section class="settings-panel" id="settingsPanel" aria-label="World Settings">
+      <div class="set-head">
+        <span>SYSTEM // SETTINGS</span>
+        <button type="button" class="set-close" id="closeSettings" aria-label="Close Settings">ESC</button>
+      </div>
+      <div class="set-body">
+        <div class="set-row">
+          <span class="set-lbl">Rain Intensity</span>
+          <div class="set-seg">
+            <button type="button" class="seg-btn active" data-set-rain="normal">Full</button>
+            <button type="button" class="seg-btn" data-set-rain="light">Light</button>
+            <button type="button" class="seg-btn" data-set-rain="off">Off</button>
+          </div>
+        </div>
+        <label class="set-check">
+          <span>Neon Glow &amp; Streetlamps</span>
+          <input type="checkbox" id="optBloom" checked />
+        </label>
+        <label class="set-check">
+          <span>Reduced Motion</span>
+          <input type="checkbox" id="optReducedMotion" />
+        </label>
+        <div class="set-keys">
+          <span><kbd>WASD</kbd> / Arrows: Move</span>
+          <span><kbd>E</kbd> Interact</span>
+          <span><kbd>M</kbd> Minimap</span>
+          <span><kbd>ESC</kbd> Back</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Bottom-Left Contextual Info Panel -->
+    <aside class="hud-context" aria-live="polite">
+      <div class="ctx-top">
+        <span class="ctx-icon">i</span>
+        <div>
+          <div class="ctx-zone" id="hudZoneTitle">WELCOME TO ANSH TOWN</div>
+          <p class="ctx-msg" id="hudContextMsg">a digital town built around my projects. explore, interact and know my work.</p>
+        </div>
+      </div>
+      <div class="ctx-hint" id="hudContextHint">[E] interact   [WASD] move   [M] map</div>
+    </aside>
+
+    <!-- Bottom-Right Interactive Minimap -->
+    <aside class="hud-minimap" id="minimapPanel" aria-label="Town Minimap">
+      <div class="mm-head">
+        <span>N</span>
+        <button type="button" class="mm-toggle" id="minimapToggle">[M]</button>
+      </div>
+      <div class="mm-body">
+        <canvas id="minimapCanvas" width="152" height="88" title="Click anywhere on map to walk there"></canvas>
+      </div>
+    </aside>
+
+    <!-- Pokemon-Style Bottom RPG Dialog Box -->
+    <div class="rpg-dialog" id="rpgDialog" aria-hidden="true">
+      <div class="rpg-dialog-inner">
+        <span class="rpg-speaker" id="rpgSpeaker">TOWN DIRECTORY</span>
+        <p class="rpg-text" id="rpgText"></p>
+        <span class="rpg-next">[E] / CLICK ▼</span>
+      </div>
+    </div>
+
+    <!-- Touch / Mobile Controls -->
+    <div class="touch-pad" aria-label="Touch Controls">
+      <div class="dpad-rpg">
+        <button type="button" class="dpad-btn" data-dir="up" aria-label="Walk up"><i data-lucide="chevron-up"></i></button>
+        <div class="dpad-mid">
+          <button type="button" class="dpad-btn" data-dir="left" aria-label="Walk left"><i data-lucide="chevron-left"></i></button>
+          <button type="button" class="dpad-btn" data-dir="down" aria-label="Walk down"><i data-lucide="chevron-down"></i></button>
+          <button type="button" class="dpad-btn" data-dir="right" aria-label="Walk right"><i data-lucide="chevron-right"></i></button>
+        </div>
+      </div>
+      <button type="button" class="action-btn" id="cityInteract" disabled>E · Interact</button>
+    </div>
+  </main>
+
+  <!-- Dedicated In-World Location Transition Overlay (Buildings, Board, Terminal) -->
+  <section class="scene-overlay" id="sceneOverlay" aria-hidden="true" role="dialog" aria-modal="true">
+    <div id="sceneContent"></div>
+  </section>
+
+  <!-- Scene Wipe Curtain -->
+  <div class="scene-curtain" id="sceneCurtain" aria-hidden="true"></div>
+
+  <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js" defer></script>
+  <script src="js/data.js" defer></script>
+  <script src="js/audio.js" defer></script>
+  <script src="js/world.js" defer></script>
+  <script src="js/player.js" defer></script>
+  <script src="js/renderer.js" defer></script>
+  <script src="js/scenes.js" defer></script>
+  <script src="js/main.js" defer></script>
+</body>
+</html>

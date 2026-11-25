@@ -1,0 +1,37 @@
+name: Sync Rewatch Profile
+
+on:
+  schedule:
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Sync rewatch.cc/@ansh data
+        run: node scripts/sync-rewatch.mjs
+
+      - name: Validate syntax
+        run: node --check js/data.js
+
+      - name: Commit changes if updated
+        run: |
+          if git diff --quiet js/data.js; then
+            echo "No changes on rewatch.cc/@ansh."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add js/data.js
+          git commit -m "chore: sync rewatch.cc/@ansh data"
+          git push
