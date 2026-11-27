@@ -187,6 +187,67 @@ function makeMarqueeTexture(title, subtitle, accentHex, isArcus = false) {
   return tex;
 }
 
+function makeFairAwningTexture(accentHex) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 256;
+  canvas.height = 128;
+  const ctx = canvas.getContext('2d');
+
+  const stripes = 8;
+  const sw = canvas.width / stripes;
+  for (let i = 0; i < stripes; i++) {
+    ctx.fillStyle = i % 2 === 0 ? accentHex : '#141724';
+    ctx.fillRect(i * sw, 0, Math.ceil(sw), 104);
+    /* Crisp bottom valance flap shadow & highlight */
+    ctx.fillStyle = i % 2 === 0 ? '#0b0d14' : accentHex;
+    ctx.fillRect(i * sw, 104, Math.ceil(sw), 24);
+  }
+  ctx.fillStyle = 'rgba(0,0,0,0.28)';
+  ctx.fillRect(0, 96, canvas.width, 8);
+
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 4;
+  return tex;
+}
+
+function makeFairFasciaTexture(title, badge, accentHex) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 384;
+  canvas.height = 96;
+  const ctx = canvas.getContext('2d');
+
+  ctx.fillStyle = '#070910';
+  ctx.fillRect(0, 0, 384, 96);
+
+  ctx.strokeStyle = accentHex;
+  ctx.lineWidth = 5;
+  ctx.strokeRect(5, 5, 374, 86);
+
+  /* Side corner bulbs/rivets on fairground marquee */
+  ctx.fillStyle = accentHex;
+  ctx.fillRect(14, 14, 356, 8);
+  ctx.fillStyle = '#fef3c7';
+  [22, 46, 338, 362].forEach(bx => {
+    ctx.fillRect(bx - 3, 28, 6, 6);
+    ctx.fillRect(bx - 3, 72, 6, 6);
+  });
+
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#f8fafc';
+  ctx.font = '700 38px "Bebas Neue", "Segoe UI", sans-serif';
+  ctx.fillText(title, 192, 57);
+
+  ctx.fillStyle = accentHex;
+  ctx.font = '600 15px "JetBrains Mono", monospace';
+  ctx.fillText(badge, 192, 79);
+
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 4;
+  return tex;
+}
+
 function makeIntroBoardTexture() {
   const canvas = document.createElement('canvas');
   canvas.width = 512;
@@ -1300,6 +1361,23 @@ function LightPoolDecals({ world, spans, visible }) {
       });
     }
 
+    const boothPools = [
+      [spans.films, '#ef4444'],
+      [spans.series, '#38bdf8'],
+      [spans.albums, '#f59e0b'],
+      [spans.songs, '#f472b6']
+    ];
+    for (const [sp, color] of boothPools) {
+      if (!sp) continue;
+      pools.push({
+        x: tileToWorldX(sp.minC, cols),
+        z: tileToWorldZ(sp.minR, rows) + 0.45,
+        sx: 3.8,
+        sz: 3.4,
+        color
+      });
+    }
+
     for (let r = 0; r < rows; r++) {
       const rowStr = MAP[r] || '';
       for (let c = 0; c < cols; c++) {
@@ -1365,6 +1443,8 @@ function Landmarks({ world, bloom, reducedMotion, effectiveEco }) {
   const arcusHaloRef = useRef(null);
   const fanRefs = useRef([]);
   const mailCrystalRef = useRef(null);
+  const filmReelLRef = useRef(null);
+  const filmReelRRef = useRef(null);
   const filmCubeRef = useRef(null);
   const seriesCubeRef = useRef(null);
   const vinylDiscRef = useRef(null);
@@ -1452,6 +1532,30 @@ function Landmarks({ world, bloom, reducedMotion, effectiveEco }) {
     const woodMat = new THREE.MeshLambertMaterial({ color: '#5c2f22' });
     const kioskBodyMat = new THREE.MeshLambertMaterial({ color: '#121521' });
     const vinylMat = new THREE.MeshLambertMaterial({ color: '#0b0d12' });
+    const boothDeckMat = new THREE.MeshLambertMaterial({ color: '#0f131f' });
+    const boothBackMat = new THREE.MeshLambertMaterial({ color: '#0b0e17' });
+    const silverTrimMat = new THREE.MeshLambertMaterial({ color: '#cbd5e1' });
+    const bulbWarmMat = new THREE.MeshLambertMaterial({
+      color: '#fef08a', emissive: '#fbbf24', emissiveIntensity: 1.65
+    });
+
+    /* Fairground Stall Textures & Materials */
+    const boothDefs = {
+      films: { title: 'FILMS', badge: 'CINEMA BOOTH', hex: '#ef4444' },
+      series: { title: 'SERIES', badge: 'BINGE PAVILION', hex: '#38bdf8' },
+      albums: { title: 'ALBUMS', badge: 'VINYL STALL', hex: '#f59e0b' },
+      songs: { title: 'SONGS', badge: 'SOUND STAGE', hex: '#f472b6' }
+    };
+    const boothTextures = [];
+    const awningMats = {};
+    const fasciaMats = {};
+    Object.entries(boothDefs).forEach(([key, def]) => {
+      const awTex = makeFairAwningTexture(def.hex);
+      const faTex = makeFairFasciaTexture(def.title, def.badge, def.hex);
+      boothTextures.push(awTex, faTex);
+      awningMats[key] = new THREE.MeshLambertMaterial({ map: awTex });
+      fasciaMats[key] = new THREE.MeshBasicMaterial({ map: faTex });
+    });
 
     /* Shared Geometries */
     const acBoxGeo = new THREE.BoxGeometry(0.9, 0.34, 0.7);
@@ -1476,19 +1580,43 @@ function Landmarks({ world, bloom, reducedMotion, effectiveEco }) {
     const vinylLabelGeo = new THREE.CylinderGeometry(0.12, 0.12, 0.05, 16);
     const eqBarGeo = new THREE.BoxGeometry(0.1, 0.44, 0.1);
 
+    /* E-Fair Shop Stall Geometries */
+    const boothDeckGeo = new THREE.BoxGeometry(1.86, 0.06, 1.26);
+    const boothPostGeo = new THREE.BoxGeometry(0.08, 1.78, 0.08);
+    const boothBackGeo = new THREE.BoxGeometry(1.66, 1.38, 0.08);
+    const boothSideGeo = new THREE.BoxGeometry(0.08, 0.74, 1.02);
+    const boothCounterGeo = new THREE.BoxGeometry(1.66, 0.68, 0.48);
+    const boothCounterTopGeo = new THREE.BoxGeometry(1.76, 0.07, 0.56);
+    const boothCounterRimGeo = new THREE.BoxGeometry(1.74, 0.045, 0.05);
+    const boothAwningGeo = new THREE.BoxGeometry(1.94, 0.09, 1.38);
+    const boothFasciaGeo = new THREE.BoxGeometry(1.62, 0.42, 0.08);
+    const boothFasciaFaceGeo = new THREE.PlaneGeometry(1.56, 0.38);
+    const boothBulbGeo = new THREE.BoxGeometry(0.075, 0.075, 0.075);
+    const boothPosterGeo = new THREE.BoxGeometry(0.42, 0.54, 0.05);
+    const boothCrateGeo = new THREE.BoxGeometry(0.34, 0.22, 0.32);
+    const boothSleeveGeo = new THREE.BoxGeometry(0.28, 0.28, 0.04);
+    const boothSpeakerGeo = new THREE.BoxGeometry(0.3, 0.62, 0.32);
+    const boothWooferGeo = new THREE.CylinderGeometry(0.09, 0.09, 0.04, 12);
+    const boothReelGeo = new THREE.CylinderGeometry(0.16, 0.16, 0.06, 16);
+
     const signPostGeo = new THREE.CylinderGeometry(0.05, 0.06, 0.72, 6);
     const signBoardGeo = new THREE.BoxGeometry(0.88, 0.46, 0.08);
     const signFaceGeo = new THREE.PlaneGeometry(0.82, 0.4);
 
     return {
-      glyphTex, arcusTex, boardTex, signTextures, signMaterials,
+      glyphTex, arcusTex, boardTex, signTextures, signMaterials, boothTextures,
       buildingBodyMat, roofDeckMat, darkMetalMat, fanBladeMat,
       crimsonNeonMat, azureNeonMat, amberWindowMat, cyanWindowMat, pinkNeonMat, amberNeonMat,
       glyphMarqueeMat, arcusMarqueeMat, boardFaceMat,
       toriiVermilionMat, toriiDarkMat, stoneMat, woodMat, kioskBodyMat, vinylMat,
+      boothDeckMat, boothBackMat, silverTrimMat, bulbWarmMat, awningMats, fasciaMats,
       acBoxGeo, fanBladeGeo, winGeo, doorGeo, reticleGeo, haloGeo,
       benchSeatGeo, benchBackGeo, benchLegGeo, vendBodyGeo, vendScreenGeo,
       kioskPedestalGeo, kioskTrimGeo, smallCubeGeo, crtGeo, vinylGeo, vinylLabelGeo, eqBarGeo,
+      boothDeckGeo, boothPostGeo, boothBackGeo, boothSideGeo, boothCounterGeo,
+      boothCounterTopGeo, boothCounterRimGeo, boothAwningGeo, boothFasciaGeo,
+      boothFasciaFaceGeo, boothBulbGeo, boothPosterGeo, boothCrateGeo, boothSleeveGeo,
+      boothSpeakerGeo, boothWooferGeo, boothReelGeo,
       signPostGeo, signBoardGeo, signFaceGeo
     };
   }, [signsList]);
@@ -1501,12 +1629,16 @@ function Landmarks({ world, bloom, reducedMotion, effectiveEco }) {
     res.cyanWindowMat.emissiveIntensity = 1.4 * mult;
     res.pinkNeonMat.emissiveIntensity = 1.8 * mult;
     res.amberNeonMat.emissiveIntensity = 1.7 * mult;
+    res.bulbWarmMat.emissiveIntensity = 1.65 * mult;
   }, [bloom, res]);
 
   useEffect(() => {
     return () => {
       Object.values(res.signTextures).forEach(t => t.dispose());
       Object.values(res.signMaterials).forEach(m => m.dispose());
+      res.boothTextures.forEach(t => t.dispose());
+      Object.values(res.awningMats).forEach(m => m.dispose());
+      Object.values(res.fasciaMats).forEach(m => m.dispose());
       [
         res.glyphTex, res.arcusTex, res.boardTex,
         res.buildingBodyMat, res.roofDeckMat, res.darkMetalMat, res.fanBladeMat,
@@ -1514,10 +1646,15 @@ function Landmarks({ world, bloom, reducedMotion, effectiveEco }) {
         res.pinkNeonMat, res.amberNeonMat, res.glyphMarqueeMat, res.arcusMarqueeMat,
         res.boardFaceMat, res.toriiVermilionMat, res.toriiDarkMat, res.stoneMat,
         res.woodMat, res.kioskBodyMat, res.vinylMat,
+        res.boothDeckMat, res.boothBackMat, res.silverTrimMat, res.bulbWarmMat,
         res.acBoxGeo, res.fanBladeGeo, res.winGeo, res.doorGeo, res.reticleGeo, res.haloGeo,
         res.benchSeatGeo, res.benchBackGeo, res.benchLegGeo, res.vendBodyGeo, res.vendScreenGeo,
         res.kioskPedestalGeo, res.kioskTrimGeo, res.smallCubeGeo, res.crtGeo,
         res.vinylGeo, res.vinylLabelGeo, res.eqBarGeo,
+        res.boothDeckGeo, res.boothPostGeo, res.boothBackGeo, res.boothSideGeo, res.boothCounterGeo,
+        res.boothCounterTopGeo, res.boothCounterRimGeo, res.boothAwningGeo, res.boothFasciaGeo,
+        res.boothFasciaFaceGeo, res.boothBulbGeo, res.boothPosterGeo, res.boothCrateGeo, res.boothSleeveGeo,
+        res.boothSpeakerGeo, res.boothWooferGeo, res.boothReelGeo,
         res.signPostGeo, res.signBoardGeo, res.signFaceGeo
       ].forEach(d => d.dispose());
     };
@@ -1547,14 +1684,16 @@ function Landmarks({ world, bloom, reducedMotion, effectiveEco }) {
       const f = fanRefs.current[i];
       if (f) f.rotation.y = t * (i % 2 === 0 ? 5.5 : -5.5);
     }
+    if (filmReelLRef.current) filmReelLRef.current.rotation.z = -t * 2.6;
+    if (filmReelRRef.current) filmReelRRef.current.rotation.z = -t * 2.6;
     if (filmCubeRef.current) {
       filmCubeRef.current.rotation.y = t * 1.3;
       filmCubeRef.current.rotation.x = t * 0.7;
-      filmCubeRef.current.position.y = 1.28 + Math.sin(t * 2.4) * 0.07;
+      filmCubeRef.current.position.y = 1.08 + Math.sin(t * 2.4) * 0.05;
     }
     if (seriesCubeRef.current) {
       seriesCubeRef.current.rotation.y = -t * 1.1;
-      seriesCubeRef.current.position.y = 1.28 + Math.cos(t * 2.3) * 0.07;
+      seriesCubeRef.current.position.y = 1.08 + Math.cos(t * 2.3) * 0.05;
     }
     if (vinylDiscRef.current) {
       vinylDiscRef.current.rotation.y = t * 3.1;
@@ -1562,11 +1701,64 @@ function Landmarks({ world, bloom, reducedMotion, effectiveEco }) {
     for (let i = 0; i < 4; i++) {
       const bar = eqBarRefs.current[i];
       if (!bar) continue;
-      const sy = 0.4 + 0.85 * (0.5 + 0.5 * Math.sin(t * 6.5 + i * 1.35));
+      const sy = 0.45 + 0.9 * (0.5 + 0.5 * Math.sin(t * 6.5 + i * 1.35));
       bar.scale.y = sy;
-      bar.position.y = 1.0 + sy * 0.22;
+      bar.position.y = 0.92 + sy * 0.2;
     }
   });
+
+  const renderFairBooth = (span, boothKey, trimMat, interior) => {
+    if (!span) return null;
+    const wx = tileToWorldX(span.minC, cols);
+    const wz = tileToWorldZ(span.minR, rows);
+    return html`
+      <group position=${[wx, 0, wz]}>
+        {/* Grounded Shop Platform Mat */}
+        <mesh geometry=${res.boothDeckGeo} material=${res.boothDeckMat} position=${[0, 0.03, 0.04]} />
+
+        {/* 4 Corner Steel Pavilion Pillars */}
+        <mesh geometry=${res.boothPostGeo} material=${res.darkMetalMat} position=${[-0.82, 0.91, -0.5]} />
+        <mesh geometry=${res.boothPostGeo} material=${res.darkMetalMat} position=${[0.82, 0.91, -0.5]} />
+        <mesh geometry=${res.boothPostGeo} material=${res.darkMetalMat} position=${[-0.82, 0.91, 0.52]} />
+        <mesh geometry=${res.boothPostGeo} material=${res.darkMetalMat} position=${[0.82, 0.91, 0.52]} />
+
+        {/* Back Merch Wall & Side Skirts */}
+        <mesh geometry=${res.boothBackGeo} material=${res.boothBackMat} position=${[0, 0.78, -0.5]} />
+        <mesh geometry=${res.boothSideGeo} material=${res.kioskBodyMat} position=${[-0.82, 0.4, 0.0]} />
+        <mesh geometry=${res.boothSideGeo} material=${res.kioskBodyMat} position=${[0.82, 0.4, 0.0]} />
+
+        {/* Serving Counter + Hardwood Top + Neon Trim Strip */}
+        <mesh geometry=${res.boothCounterGeo} material=${res.kioskBodyMat} position=${[0, 0.37, 0.28]} />
+        <mesh geometry=${res.boothCounterTopGeo} material=${res.woodMat} position=${[0, 0.74, 0.28]} />
+        <mesh geometry=${res.boothCounterRimGeo} material=${trimMat} position=${[0, 0.71, 0.55]} />
+
+        {/* Sloped Striped Festival Canopy Awning */}
+        <mesh
+          geometry=${res.boothAwningGeo}
+          material=${res.awningMats[boothKey]}
+          position=${[0, 1.78, 0.08]}
+          rotation=${[0.2, 0, 0]}
+        />
+
+        {/* Warm Festoon Fairy Bulbs Under Front Eave */}
+        ${[-0.68, -0.34, 0, 0.34, 0.68].map(bx => html`
+          <mesh
+            key=${bx}
+            geometry=${res.boothBulbGeo}
+            material=${res.bulbWarmMat}
+            position=${[bx, 1.59, 0.72]}
+          />
+        `)}
+
+        {/* Top Illuminated Fairground Fascia Signboard */}
+        <mesh geometry=${res.boothFasciaGeo} material=${res.darkMetalMat} position=${[0, 2.06, 0.44]} />
+        <mesh geometry=${res.boothFasciaFaceGeo} material=${res.fasciaMats[boothKey]} position=${[0, 2.06, 0.485]} />
+
+        {/* Booth Theme Merchandise */}
+        ${interior}
+      </group>
+    `;
+  };
 
   const renderHeroBuilding = (span, doorSpan, isArcus) => {
     if (!span) return null;
@@ -1748,46 +1940,73 @@ function Landmarks({ world, bloom, reducedMotion, effectiveEco }) {
         </group>
       `}
 
-      {/* 5. Rewatch Corner Kiosks ('3', '4', '5', '6') */}
-      ${spans.films && html`
-        <group position=${[tileToWorldX(spans.films.minC, cols), 0, tileToWorldZ(spans.films.minR, rows)]}>
-          <mesh geometry=${res.kioskPedestalGeo} material=${res.kioskBodyMat} position=${[0, 0.37, 0]} />
-          <mesh geometry=${res.kioskTrimGeo} material=${res.crimsonNeonMat} position=${[0, 0.76, 0]} />
-          <mesh ref=${filmCubeRef} geometry=${res.smallCubeGeo} material=${res.crimsonNeonMat} position=${[0, 1.28, 0]} />
+      {/* 5. Rewatch Corner Night-Market / E-Fair Shop Stalls ('3', '4', '5', '6') */}
+      ${renderFairBooth(spans.films, 'films', res.crimsonNeonMat, html`
+        {/* Back-wall cinema lightboxes */}
+        <mesh geometry=${res.boothPosterGeo} material=${res.crimsonNeonMat} position=${[-0.4, 1.16, -0.44]} />
+        <mesh geometry=${res.boothPosterGeo} material=${res.amberWindowMat} position=${[0.36, 1.16, -0.44]} />
+        {/* Counter dual-reel film projector + hovering cube */}
+        <group position=${[-0.3, 0.88, 0.24]}>
+          <mesh material=${res.darkMetalMat} position=${[0, 0.06, 0]}>
+            <boxGeometry args=${[0.38, 0.16, 0.22]} />
+          </mesh>
+          <mesh ref=${filmReelLRef} geometry=${res.boothReelGeo} material=${res.silverTrimMat} position=${[-0.12, 0.24, 0]} rotation=${[Math.PI / 2, 0, 0]} />
+          <mesh ref=${filmReelRRef} geometry=${res.boothReelGeo} material=${res.silverTrimMat} position=${[0.12, 0.24, 0]} rotation=${[Math.PI / 2, 0, 0]} />
+          <mesh material=${res.amberNeonMat} position=${[0, 0.08, 0.14]}>
+            <boxGeometry args=${[0.1, 0.08, 0.08]} />
+          </mesh>
         </group>
-      `}
-      ${spans.series && html`
-        <group position=${[tileToWorldX(spans.series.minC, cols), 0, tileToWorldZ(spans.series.minR, rows)]}>
-          <mesh geometry=${res.kioskPedestalGeo} material=${res.kioskBodyMat} position=${[0, 0.37, 0]} />
-          <mesh geometry=${res.kioskTrimGeo} material=${res.azureNeonMat} position=${[0, 0.76, 0]} />
-          <mesh ref=${seriesCubeRef} geometry=${res.crtGeo} material=${res.cyanWindowMat} position=${[0, 1.28, 0]} />
+        <mesh ref=${filmCubeRef} geometry=${res.smallCubeGeo} material=${res.crimsonNeonMat} position=${[0.36, 1.08, 0.25]} />
+      `)}
+      ${renderFairBooth(spans.series, 'series', res.azureNeonMat, html`
+        {/* Back-wall media shelf + backlit screen */}
+        <mesh geometry=${res.boothPosterGeo} material=${res.cyanWindowMat} position=${[-0.42, 1.16, -0.44]} />
+        <mesh geometry=${res.boothPosterGeo} material=${res.pinkNeonMat} position=${[0.06, 1.16, -0.44]} />
+        <mesh geometry=${res.boothPosterGeo} material=${res.azureNeonMat} position=${[0.52, 1.16, -0.44]} />
+        {/* Counter streaming monitor + CRT hologram */}
+        <mesh ref=${seriesCubeRef} geometry=${res.crtGeo} material=${res.cyanWindowMat} position=${[0.02, 1.08, 0.26]} />
+        <mesh geometry=${res.boothCrateGeo} material=${res.azureNeonMat} position=${[-0.5, 0.88, 0.25]} />
+        <mesh geometry=${res.boothCrateGeo} material=${res.pinkNeonMat} position=${[0.52, 0.88, 0.25]} />
+      `)}
+      ${renderFairBooth(spans.albums, 'albums', res.amberNeonMat, html`
+        {/* Back-wall LP sleeve showcase */}
+        <mesh geometry=${res.boothSleeveGeo} material=${res.amberWindowMat} position=${[-0.48, 1.18, -0.44]} />
+        <mesh geometry=${res.boothSleeveGeo} material=${res.crimsonNeonMat} position=${[0, 1.18, -0.44]} />
+        <mesh geometry=${res.boothSleeveGeo} material=${res.cyanWindowMat} position=${[0.48, 1.18, -0.44]} />
+        {/* Left & right record crate bins + center spinning LP turntable */}
+        <mesh geometry=${res.boothCrateGeo} material=${res.woodMat} position=${[-0.52, 0.88, 0.25]} />
+        <mesh geometry=${res.boothSleeveGeo} material=${res.pinkNeonMat} position=${[-0.52, 1.04, 0.24]} rotation=${[-0.2, 0.1, 0]} />
+        <mesh geometry=${res.boothCrateGeo} material=${res.woodMat} position=${[0.52, 0.88, 0.25]} />
+        <mesh geometry=${res.boothSleeveGeo} material=${res.azureNeonMat} position=${[0.52, 1.04, 0.24]} rotation=${[-0.2, -0.1, 0]} />
+        <group ref=${vinylDiscRef} position=${[0, 0.84, 0.25]} rotation=${[0.24, 0, 0]}>
+          <mesh geometry=${res.vinylGeo} material=${res.vinylMat} />
+          <mesh geometry=${res.vinylLabelGeo} material=${res.amberNeonMat} position=${[0, 0.01, 0]} />
         </group>
-      `}
-      ${spans.albums && html`
-        <group position=${[tileToWorldX(spans.albums.minC, cols), 0, tileToWorldZ(spans.albums.minR, rows)]}>
-          <mesh geometry=${res.kioskPedestalGeo} material=${res.kioskBodyMat} position=${[0, 0.37, 0]} />
-          <mesh geometry=${res.kioskTrimGeo} material=${res.amberNeonMat} position=${[0, 0.76, 0]} />
-          <group ref=${vinylDiscRef} position=${[0, 1.05, 0]} rotation=${[0.35, 0, 0]}>
-            <mesh geometry=${res.vinylGeo} material=${res.vinylMat} />
-            <mesh geometry=${res.vinylLabelGeo} material=${res.amberNeonMat} position=${[0, 0.01, 0]} />
-          </group>
+      `)}
+      ${renderFairBooth(spans.songs, 'songs', res.pinkNeonMat, html`
+        {/* Back-wall neon acoustic backdrop */}
+        <mesh geometry=${res.boothPosterGeo} material=${res.pinkNeonMat} position=${[0, 1.16, -0.44]} />
+        {/* Twin subwoofer speaker towers + live 4-band console EQ */}
+        <group position=${[-0.58, 1.08, 0.24]}>
+          <mesh geometry=${res.boothSpeakerGeo} material=${res.darkMetalMat} />
+          <mesh geometry=${res.boothWooferGeo} material=${res.pinkNeonMat} position=${[0, 0.12, 0.16]} rotation=${[Math.PI / 2, 0, 0]} />
+          <mesh geometry=${res.boothWooferGeo} material=${res.pinkNeonMat} position=${[0, -0.14, 0.16]} rotation=${[Math.PI / 2, 0, 0]} />
         </group>
-      `}
-      ${spans.songs && html`
-        <group position=${[tileToWorldX(spans.songs.minC, cols), 0, tileToWorldZ(spans.songs.minR, rows)]}>
-          <mesh geometry=${res.kioskPedestalGeo} material=${res.kioskBodyMat} position=${[0, 0.37, 0]} />
-          <mesh geometry=${res.kioskTrimGeo} material=${res.pinkNeonMat} position=${[0, 0.76, 0]} />
-          ${[0, 1, 2, 3].map(idx => html`
-            <mesh
-              key=${idx}
-              ref=${el => { eqBarRefs.current[idx] = el; }}
-              geometry=${res.eqBarGeo}
-              material=${res.pinkNeonMat}
-              position=${[-0.24 + idx * 0.16, 1.12, 0]}
-            />
-          `)}
+        <group position=${[0.58, 1.08, 0.24]}>
+          <mesh geometry=${res.boothSpeakerGeo} material=${res.darkMetalMat} />
+          <mesh geometry=${res.boothWooferGeo} material=${res.pinkNeonMat} position=${[0, 0.12, 0.16]} rotation=${[Math.PI / 2, 0, 0]} />
+          <mesh geometry=${res.boothWooferGeo} material=${res.pinkNeonMat} position=${[0, -0.14, 0.16]} rotation=${[Math.PI / 2, 0, 0]} />
         </group>
-      `}
+        ${[0, 1, 2, 3].map(idx => html`
+          <mesh
+            key=${idx}
+            ref=${el => { eqBarRefs.current[idx] = el; }}
+            geometry=${res.eqBarGeo}
+            material=${res.pinkNeonMat}
+            position=${[-0.24 + idx * 0.16, 1.02, 0.26]}
+          />
+        `)}
+      `)}
 
       {/* 6. Vending Machines ('V') */}
       ${PROPS.vendors.map(v => {

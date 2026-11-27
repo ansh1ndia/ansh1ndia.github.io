@@ -475,41 +475,87 @@ window.AnshRenderer = (() => {
         }[obj.id];
         if (!rwMeta) continue;
         const near = activeObj?.id === obj.id;
-        ctx.fillStyle = 'rgba(0,0,0,0.52)';
-        ctx.fillRect(x + 3, y + 25, 26, 6);
-        ctx.fillStyle = '#12141e';
-        ctx.fillRect(x + 3, y + 2, 26, 25);
-        ctx.strokeStyle = near ? '#ffffff' : rwMeta.color;
-        ctx.lineWidth = near ? 1.8 : 1.2;
-        ctx.strokeRect(x + 3.5, y + 2.5, 25, 24);
-        ctx.fillStyle = '#07090f';
-        ctx.fillRect(x + 6, y + 5, 20, 13);
+        const rw = 44;
+        const rh = 34;
+        const bx = Math.round(x + 16 - rw / 2);
+        const by = Math.round(y + 16 - rh / 2) - 2;
 
+        /* Night-market floor spill & grounded shop pad */
+        ctx.fillStyle = 'rgba(0,0,0,0.56)';
+        ctx.fillRect(bx - 1, by + rh - 3, rw + 2, 7);
+        ctx.fillStyle = '#0f121d';
+        ctx.fillRect(bx, by + 2, rw, rh - 2);
+        ctx.strokeStyle = near ? '#ffffff' : rwMeta.color;
+        ctx.lineWidth = near ? 1.8 : 1.1;
+        ctx.strokeRect(bx + 0.5, by + 2.5, rw - 1, rh - 3);
+
+        /* Open booth backdrop & serving counter */
+        ctx.fillStyle = '#070910';
+        ctx.fillRect(bx + 3, by + 11, rw - 6, 14);
+        ctx.fillStyle = '#5c2f22';
+        ctx.fillRect(bx + 2, by + 24, rw - 4, 4);
+        ctx.fillStyle = rwMeta.color;
+        ctx.fillRect(bx + 2, by + 27, rw - 4, 1.5);
+
+        /* Striped festival canopy awning & fairy bulbs */
+        const stripeCount = 6;
+        const stripeW = (rw - 2) / stripeCount;
+        for (let si = 0; si < stripeCount; si++) {
+          ctx.fillStyle = si % 2 === 0 ? rwMeta.color : '#1b2032';
+          ctx.fillRect(Math.round(bx + 1 + si * stripeW), by + 1, Math.ceil(stripeW), 8);
+        }
+        ctx.fillStyle = '#fef08a';
+        for (let fi = 0; fi < 5; fi++) {
+          ctx.fillRect(bx + 5 + fi * 8, by + 9, 2, 2);
+        }
+
+        /* Bespoke shop merchandise inside booth */
         if (rwMeta.kind === 'cinema') {
-          ctx.fillStyle = '#ef4444'; ctx.fillRect(x + 8, y + 7, 7, 9);
-          ctx.fillStyle = '#fca5a5'; ctx.fillRect(x + 17, y + 7, 7, 9);
+          ctx.fillStyle = '#ef4444'; ctx.fillRect(bx + 6, by + 13, 8, 10);
+          ctx.fillStyle = '#f59e0b'; ctx.fillRect(bx + 16, by + 13, 8, 10);
+          ctx.fillStyle = '#fef2f2';
+          ctx.fillRect(bx + 28, by + 15, 5, 5);
+          ctx.fillRect(bx + 34, by + 15, 5, 5);
+          ctx.fillStyle = '#dc2626'; ctx.fillRect(bx + 29, by + 20, 9, 4);
         } else if (rwMeta.kind === 'screen') {
-          ctx.fillStyle = '#38bdf8'; ctx.fillRect(x + 8, y + 7, 16, 9);
-          ctx.fillStyle = '#bae6fd'; ctx.fillRect(x + 10, y + 9, 10, 2);
-          ctx.fillRect(x + 10, y + 12, 6, 2);
+          ctx.fillStyle = '#1e293b'; ctx.fillRect(bx + 6, by + 13, 20, 11);
+          ctx.fillStyle = '#38bdf8'; ctx.fillRect(bx + 8, by + 15, 16, 7);
+          ctx.fillStyle = '#bae6fd'; ctx.fillRect(bx + 10, by + 17, 9, 2);
+          ctx.fillStyle = '#334155'; ctx.fillRect(bx + 29, by + 14, 9, 9);
+          ctx.fillStyle = '#f472b6'; ctx.fillRect(bx + 30, by + 16, 7, 2);
+          ctx.fillStyle = '#f59e0b'; ctx.fillRect(bx + 30, by + 19, 7, 2);
         } else if (rwMeta.kind === 'vinyl') {
           const ang = settings.reducedMotion ? 0 : time * 3;
+          ctx.fillStyle = '#7c3f2c'; ctx.fillRect(bx + 5, by + 16, 10, 8);
+          ctx.fillStyle = '#ef4444'; ctx.fillRect(bx + 6, by + 14, 3, 4);
+          ctx.fillStyle = '#38bdf8'; ctx.fillRect(bx + 10, by + 13, 4, 5);
           ctx.fillStyle = '#f59e0b';
-          ctx.beginPath(); ctx.arc(x + 16, y + 11.5, 5, 0, Math.PI * 2); ctx.fill();
-          ctx.fillStyle = '#07090f'; ctx.fillRect(x + 15, y + 10.5, 2, 2);
+          ctx.beginPath(); ctx.arc(bx + 25, by + 19, 5.5, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = '#07090f'; ctx.fillRect(bx + 24, by + 18, 2, 2);
           ctx.fillStyle = '#fef3c7';
-          ctx.fillRect(Math.round(x + 16 + Math.cos(ang) * 3), Math.round(y + 11.5 + Math.sin(ang) * 3), 1, 1);
+          ctx.fillRect(Math.round(bx + 25 + Math.cos(ang) * 3.5), Math.round(by + 19 + Math.sin(ang) * 3.5), 1.5, 1.5);
+          ctx.fillStyle = '#ec4899'; ctx.fillRect(bx + 33, by + 14, 6, 8);
         } else if (rwMeta.kind === 'eq') {
+          ctx.fillStyle = '#181826';
+          ctx.fillRect(bx + 5, by + 13, 7, 11);
+          ctx.fillRect(bx + 32, by + 13, 7, 11);
+          ctx.fillStyle = '#ec4899';
+          ctx.fillRect(bx + 7, by + 15, 3, 3); ctx.fillRect(bx + 7, by + 19, 3, 3);
+          ctx.fillRect(bx + 34, by + 15, 3, 3); ctx.fillRect(bx + 34, by + 19, 3, 3);
           ctx.fillStyle = '#f472b6';
           for (let b = 0; b < 4; b++) {
             const bh = settings.reducedMotion ? 5 : (3 + Math.round((0.5 + 0.5 * Math.sin(time * 6 + b * 1.4)) * 7));
-            ctx.fillRect(x + 9 + b * 4, y + 16 - bh, 2, bh);
+            ctx.fillRect(bx + 15 + b * 4, by + 23 - bh, 2.5, bh);
           }
         }
+
+        /* Fairground signboard nameplate */
+        ctx.fillStyle = '#070910';
+        ctx.fillRect(bx + 6, by + 28, rw - 12, 8);
         ctx.textAlign = 'center';
         ctx.fillStyle = rwMeta.color;
-        ctx.font = '500 6.5px "JetBrains Mono", monospace';
-        ctx.fillText(rwMeta.label, x + 16, y + 24);
+        ctx.font = '600 6.5px "JetBrains Mono", monospace';
+        ctx.fillText(rwMeta.label, x + 16, by + 34.5);
       } else if (obj.kind === 'terminal') {
         const near = activeObj?.id === 'contact';
         ctx.fillStyle = 'rgba(0,0,0,0.52)';
