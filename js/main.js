@@ -265,7 +265,58 @@
     }
   };
 
-  /* ── 2D / 3D Dimension Mode Switch ── */
+  /* ── 2D / 3D Dimension Mode Switch & 3D Pointer Lock ── */
+  const isPointerLocked3D = () => {
+    const ple = document.pointerLockElement;
+    return Boolean(ple && (ple === world3dMount || world3dMount.contains(ple)));
+  };
+
+  const getDefault3DPrompt = () => {
+    if (isPointerLocked3D()) return '[ESC] Unlock Cursor · Move mouse to orbit';
+    return isTouchOrNarrow()
+      ? 'Drag to orbit · Scroll to zoom'
+      : 'Click view to lock cursor · Drag to orbit';
+  };
+
+  const syncPointerLockUI = () => {
+    const locked = is3DMode && isPointerLocked3D();
+    gameRoot.classList.toggle('is-pointer-locked', locked);
+    if (world3dPrompt && !activeObj) {
+      world3dPrompt.textContent = getDefault3DPrompt();
+    }
+  };
+
+  const request3DPointerLock = () => {
+    if (!is3DMode || isTouchOrNarrow()) return;
+    if (S.isSceneOpen() || S.isDialogOpen() || settingsOpen || projMenuOpen || passportOpen || cmdOpen) return;
+    if (isPointerLocked3D()) return;
+    try {
+      const p = world3dMount.requestPointerLock?.();
+      if (p && typeof p.catch === 'function') p.catch(() => {});
+    } catch {}
+  };
+
+  const exit3DPointerLock = () => {
+    try {
+      if (document.pointerLockElement) document.exitPointerLock?.();
+    } catch {}
+  };
+
+  document.addEventListener('pointerlockchange', syncPointerLockUI);
+  document.addEventListener('pointerlockerror', syncPointerLockUI);
+
+  world3dMount.addEventListener('click', () => {
+    if (is3DMode && !isPointerLocked3D()) request3DPointerLock();
+  });
+
+  window.addEventListener('ansh3d-mounted', () => {
+    gameRoot.classList.remove('is-3d-loading');
+    if (is3DMode) {
+      window.Ansh3D?.syncSettings?.({ ...settings, onAutoEco: triggerAutoEco });
+      window.Ansh3D?.setActive?.(true);
+    }
+  });
+
   const setDimension = target3D => {
     const want3D = Boolean(target3D);
     if (want3D === is3DMode) return;
@@ -282,12 +333,18 @@
     });
 
     if (is3DMode) {
+      const readyNow = Boolean(window.Ansh3D?.isReady?.());
+      gameRoot.classList.toggle('is-3d-loading', !readyNow);
       window.Ansh3D?.mount?.(world3dMount);
       window.Ansh3D?.syncSettings?.({ ...settings, onAutoEco: triggerAutoEco });
       window.Ansh3D?.setActive?.(true);
+      request3DPointerLock();
     } else {
+      gameRoot.classList.remove('is-3d-loading');
+      exit3DPointerLock();
       window.Ansh3D?.setActive?.(false);
     }
+    syncPointerLockUI();
     Audio.playUI(is3DMode ? 680 : 480);
   };
 
@@ -767,7 +824,7 @@
         contextHint.textContent = '[E] interact   [WASD] move   [SHIFT] sprint   [Ctrl+K] menu';
         interactBtn.disabled = true;
         interactBtn.textContent = 'E · Interact';
-        if (world3dPrompt) world3dPrompt.textContent = 'Drag to orbit · Scroll to zoom';
+        if (world3dPrompt) world3dPrompt.textContent = getDefault3DPrompt();
       }
     }
   };
@@ -803,6 +860,7 @@
     combinedKeys.shift = inputKeys.shift || touchSprint;
 
     const blocked = S.isSceneOpen() || S.isDialogOpen() || settingsOpen || passportOpen || cmdOpen;
+    if (blocked && isPointerLocked3D()) exit3DPointerLock();
     const cameraYaw = is3DMode ? (window.Ansh3D?.getCameraYaw?.() || 0) : 0;
     activeObj = P.update(dt, combinedKeys, blocked, null, cameraYaw);
 

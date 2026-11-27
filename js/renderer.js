@@ -324,16 +324,17 @@ window.AnshRenderer = (() => {
         const h = hash(c, r);
 
         if (ch === 'U') {
-          ctx.fillStyle = '#080c15';
-          ctx.fillRect(x + 3, y + 5, 26, 22);
-          ctx.fillStyle = c < 17 ? 'rgba(239,68,68,0.28)' : c > 23 ? 'rgba(56,189,248,0.28)' : 'rgba(245,158,11,0.24)';
+          ctx.fillStyle = 'rgba(7,11,20,0.68)';
+          ctx.fillRect(x + 4, y + 6, 24, 20);
+          ctx.fillRect(x + 2, y + 9, 28, 14);
+          ctx.fillStyle = c < 17 ? 'rgba(239,68,68,0.22)' : c > 23 ? 'rgba(56,189,248,0.22)' : 'rgba(245,158,11,0.18)';
           const shim = isEco ? 0 : (Math.sin(time * 3.5 + c) > 0 ? 1 : 0);
-          ctx.fillRect(x + 6 + shim, y + 9, 14, 3);
+          ctx.fillRect(x + 6 + shim, y + 10, 14, 2);
           ctx.fillRect(x + 11 - shim, y + 18, 12, 2);
           if (!settings.reducedMotion && !isEco) {
             const rp = ((time * 1.2 + h) % 1);
-            const rad = 2 + rp * 8;
-            ctx.strokeStyle = `rgba(255,255,255,${((1 - rp) * 0.24).toFixed(2)})`;
+            const rad = 2 + rp * 7;
+            ctx.strokeStyle = `rgba(255,255,255,${((1 - rp) * 0.18).toFixed(2)})`;
             ctx.lineWidth = 1;
             ctx.beginPath();
             ctx.ellipse(x + 16, y + 16, rad, rad * 0.55, 0, 0, Math.PI * 2);

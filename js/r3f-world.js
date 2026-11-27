@@ -1580,14 +1580,14 @@ function Landmarks({ world, bloom, reducedMotion, effectiveEco }) {
     const vinylLabelGeo = new THREE.CylinderGeometry(0.12, 0.12, 0.05, 16);
     const eqBarGeo = new THREE.BoxGeometry(0.1, 0.44, 0.1);
 
-    /* E-Fair Shop Stall Geometries */
+    /* E-Fair Shop Stall Geometries (non-coplanar clearances inside corner posts) */
     const boothDeckGeo = new THREE.BoxGeometry(1.86, 0.06, 1.26);
     const boothPostGeo = new THREE.BoxGeometry(0.08, 1.78, 0.08);
-    const boothBackGeo = new THREE.BoxGeometry(1.66, 1.38, 0.08);
-    const boothSideGeo = new THREE.BoxGeometry(0.08, 0.74, 1.02);
-    const boothCounterGeo = new THREE.BoxGeometry(1.66, 0.68, 0.48);
-    const boothCounterTopGeo = new THREE.BoxGeometry(1.76, 0.07, 0.56);
-    const boothCounterRimGeo = new THREE.BoxGeometry(1.74, 0.045, 0.05);
+    const boothBackGeo = new THREE.BoxGeometry(1.54, 1.38, 0.06);
+    const boothSideGeo = new THREE.BoxGeometry(0.06, 0.72, 0.92);
+    const boothCounterGeo = new THREE.BoxGeometry(1.54, 0.68, 0.44);
+    const boothCounterTopGeo = new THREE.BoxGeometry(1.56, 0.07, 0.48);
+    const boothCounterRimGeo = new THREE.BoxGeometry(1.56, 0.045, 0.05);
     const boothAwningGeo = new THREE.BoxGeometry(1.94, 0.09, 1.38);
     const boothFasciaGeo = new THREE.BoxGeometry(1.62, 0.42, 0.08);
     const boothFasciaFaceGeo = new THREE.PlaneGeometry(1.56, 0.38);
@@ -1728,9 +1728,9 @@ function Landmarks({ world, bloom, reducedMotion, effectiveEco }) {
         <mesh geometry=${res.boothSideGeo} material=${res.kioskBodyMat} position=${[0.82, 0.4, 0.0]} />
 
         {/* Serving Counter + Hardwood Top + Neon Trim Strip */}
-        <mesh geometry=${res.boothCounterGeo} material=${res.kioskBodyMat} position=${[0, 0.37, 0.28]} />
-        <mesh geometry=${res.boothCounterTopGeo} material=${res.woodMat} position=${[0, 0.74, 0.28]} />
-        <mesh geometry=${res.boothCounterRimGeo} material=${trimMat} position=${[0, 0.71, 0.55]} />
+        <mesh geometry=${res.boothCounterGeo} material=${res.kioskBodyMat} position=${[0, 0.37, 0.24]} />
+        <mesh geometry=${res.boothCounterTopGeo} material=${res.woodMat} position=${[0, 0.74, 0.25]} />
+        <mesh geometry=${res.boothCounterRimGeo} material=${trimMat} position=${[0, 0.71, 0.51]} />
 
         {/* Sloped Striped Festival Canopy Awning */}
         <mesh
@@ -1752,7 +1752,7 @@ function Landmarks({ world, bloom, reducedMotion, effectiveEco }) {
 
         {/* Top Illuminated Fairground Fascia Signboard */}
         <mesh geometry=${res.boothFasciaGeo} material=${res.darkMetalMat} position=${[0, 2.06, 0.44]} />
-        <mesh geometry=${res.boothFasciaFaceGeo} material=${res.fasciaMats[boothKey]} position=${[0, 2.06, 0.485]} />
+        <mesh geometry=${res.boothFasciaFaceGeo} material=${res.fasciaMats[boothKey]} position=${[0, 2.06, 0.495]} />
 
         {/* Booth Theme Merchandise */}
         ${interior}
@@ -2511,7 +2511,24 @@ function CameraRig({ cameraMode, orbitRef, world, controller }) {
       lastY = e.clientY;
     };
 
+    const isLockedHere = () => {
+      const ple = document.pointerLockElement;
+      if (!ple) return false;
+      const mount = document.getElementById('world3dMount');
+      return ple === dom || (mount && (ple === mount || mount.contains(ple)));
+    };
+
     const onPointerMove = e => {
+      if (controller.state.active && isLockedHere()) {
+        const mx = Number.isFinite(e.movementX) ? e.movementX : 0;
+        const my = Number.isFinite(e.movementY) ? e.movementY : 0;
+        if (Math.abs(mx) < 220 && Math.abs(my) < 220) {
+          orbitRef.current.yaw -= mx * 0.0032;
+          orbitRef.current.pitch = Math.max(0.28, Math.min(1.25, orbitRef.current.pitch + my * 0.0028));
+          controller.cameraYaw = orbitRef.current.yaw;
+        }
+        return;
+      }
       if (activePointerId === null || e.pointerId !== activePointerId) return;
       const dx = e.clientX - lastX;
       const dy = e.clientY - lastY;
@@ -2756,6 +2773,7 @@ function WorldApp({ controller }) {
 
   const handleCreated = ({ gl }) => {
     controller.ready = true;
+    window.dispatchEvent(new CustomEvent('ansh3d-mounted'));
     gl.domElement.addEventListener('webglcontextlost', e => {
       e.preventDefault();
     });
@@ -2918,3 +2936,9 @@ window.Ansh3D = {
     }
   }
 };
+
+/* Auto-activate if user toggled 3D before ES module finished downloading */
+if (document.getElementById('gameRoot')?.classList.contains('is-3d')) {
+  window.Ansh3D.mount(document.getElementById('world3dMount'));
+  window.Ansh3D.setActive(true);
+}

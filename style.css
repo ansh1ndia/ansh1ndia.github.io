@@ -65,12 +65,19 @@ button { font-family: inherit; -webkit-tap-highlight-color: transparent; }
 .world-3d-mount {
   position: absolute; inset: 0; z-index: 4;
   opacity: 0; pointer-events: none;
-  background: #05070c;
+  background: transparent;
   transition: opacity .25s var(--ease);
 }
-.game-root.is-3d #cityCanvas { opacity: 0; pointer-events: none; }
+.game-root.is-3d:not(.is-3d-loading) #cityCanvas { opacity: 0; pointer-events: none; }
 .game-root.is-3d .world-3d-mount { opacity: 1; pointer-events: auto; }
+.game-root.is-3d.is-3d-loading .world-3d-mount { opacity: 0; }
 .world-3d-mount canvas { display: block; width: 100%; height: 100%; outline: none; touch-action: none; }
+.game-root.is-3d.is-pointer-locked::after {
+  content: ''; position: absolute; top: 50%; left: 50%; z-index: 16;
+  width: 5px; height: 5px; margin: -2.5px 0 0 -2.5px; border-radius: 50%;
+  background: rgba(255, 255, 255, 0.72); box-shadow: 0 0 0 1.5px rgba(56, 189, 248, 0.55);
+  pointer-events: none;
+}
 
 .world3d-hud-chip {
   position: absolute; top: 4rem; left: 50%; transform: translateX(-50%) translateY(-6px); z-index: 18;
